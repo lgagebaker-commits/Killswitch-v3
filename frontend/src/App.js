@@ -6,6 +6,8 @@ const PROXIES = [
   u => 'https://corsproxy.io/?' + encodeURIComponent(u),
   u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
   u => 'https://thingproxy.freeboard.io/fetch/' + u,
+  u => 'https://cors-anywhere.herokuapp.com/' + u,
+  u => 'https://crossorigin.me/' + u,
 ];
 
 const SEARX = [
@@ -327,17 +329,83 @@ function App() {
         t.id === currentTabId ? {
           ...t,
           showError: true,
-          errorMsg: `Could not load "${url}". The site blocks proxy access, or you may be offline.`,
+          blobUrl: null, // Clear blobUrl so error page shows
+          errorMsg: `Could not load "${url}". The site may block proxy access, or you may be offline.`,
         } : t
       ));
       setStatusText('Failed');
       return;
     }
 
+    // Inject base tag for relative URLs (without target="_blank")
     if (!/]*>/i.test(html)) {
-      const base = `<base href="${url}" target="_blank">`;
+      const base = `<base href="${url}">`;
       html = html.replace(/(<head[^>]*>)/i, '$1' + base);
       if (!html.includes('<base')) html = base + html;
+    }
+
+    // Inject link interceptor script to handle clicks within iframe
+    // We need to store the original URL for resolving relative links
+    const linkInterceptor = `
+      <script>
+        (function() {
+          var originalBaseUrl = '${url}';
+          
+          function resolveUrl(href) {
+            // If it's already absolute, return as is
+            if (href.startsWith('http://') || href.startsWith('https://')) {
+              return href;
+            }
+            // If it starts with //, prepend https:
+            if (href.startsWith('//')) {
+              return 'https:' + href;
+            }
+            // Use URL API to resolve relative URL
+            try {
+              return new URL(href, originalBaseUrl).href;
+            } catch(e) {
+              return originalBaseUrl;
+            }
+          }
+          
+          document.addEventListener('click', function(e) {
+            var target = e.target;
+            while (target && target.tagName !== 'A') {
+              target = target.parentElement;
+            }
+            if (target) {
+              var href = target.getAttribute('href');
+              if (!href || href.startsWith('javascript:') || href.startsWith('#')) {
+                return;
+              }
+              e.preventDefault();
+              e.stopPropagation();
+              var absoluteUrl = resolveUrl(href);
+              window.parent.postMessage({type: 'loadURL', url: absoluteUrl}, '*');
+            }
+          }, true);
+          
+          // Also handle form submissions
+          document.addEventListener('submit', function(e) {
+            var form = e.target;
+            var action = form.getAttribute('action') || originalBaseUrl;
+            e.preventDefault();
+            var formData = new FormData(form);
+            var params = new URLSearchParams(formData).toString();
+            var absoluteAction = resolveUrl(action);
+            var separator = absoluteAction.includes('?') ? '&' : '?';
+            var url = absoluteAction + separator + params;
+            window.parent.postMessage({type: 'loadURL', url: url}, '*');
+          }, true);
+        })();
+      </script>
+    `;
+    
+    // Inject before closing body or at end
+    if (html.includes('</body>')) {
+      html = html.replace('</body>', linkInterceptor + '</body>');
+    } else {
+      html = html + linkInterceptor;
     }
 
     if (blobURLsRef.current[currentTabId]) {
@@ -523,63 +591,79 @@ function App() {
         </div>
 
         {/* Tab Contents */}
-        {tabs.map(tab => (
-          <React.Fragment key={tab.id}>
-            {/* New Tab Page */}
-            {tab.id === activeTabId && !tab.url && !tab.showError && (
-              <div className="new-tab-page active" data-testid={`ntp-${tab.id}`}>
-                <h1>🌐 CreaoBrowser</h1>
-                <div className="search-box-wrap">
-                  <span style={{ fontSize: 18, color: '#9aa0a6' }}>🔍</span>
-                  <input
-                    className="search-box"
-                    placeholder="Search the web…"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        const query = e.target.value.trim();
-                        if (query) {
-                          doSearch(query);
+        {tabs.map(tab => {
+          const isActive = tab.id === activeTabId;
+          const showNewTab = isActive && !tab.url && !tab.showError && !loading;
+          const showError = isActive && tab.showError && !loading;
+          // Show frame if we have a blobUrl, even while loading (keeps previous content visible)
+          const showFrame = isActive && tab.blobUrl && !tab.showError;
+          
+          return (
+            <React.Fragment key={tab.id}>
+              {/* New Tab Page */}
+              {showNewTab && (
+                <div className="new-tab-page active" data-testid={`ntp-${tab.id}`}>
+                  <h1>🌐 CreaoBrowser</h1>
+                  <div className="search-box-wrap">
+                    <span style={{ fontSize: 18, color: '#9aa0a6' }}>🔍</span>
+                    <input
+                      className="search-box"
+                      placeholder="Search the web…"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const query = e.target.value.trim();
+                          if (query) {
+                            doSearch(query);
+                          }
                         }
-                      }
-                    }}
-                    data-testid={`ntp-search-${tab.id}`}
-                  />
+                      }}
+                      data-testid={`ntp-search-${tab.id}`}
+                    />
+                  </div>
+                  <div className="quick-links">
+                    {QL.map((q, i) => (
+                      <div key={i} className="quick-link" onClick={() => loadURL(q.url)}>
+                        <div className="ql-icon">{q.icon}</div>
+                        <span>{q.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="quick-links">
-                  {QL.map((q, i) => (
-                    <div key={i} className="quick-link" onClick={() => loadURL(q.url)}>
-                      <div className="ql-icon">{q.icon}</div>
-                      <span>{q.label}</span>
-                    </div>
-                  ))}
+              )}
+
+              {/* Error Page */}
+              {showError && (
+                <div className="error-page active" data-testid={`error-${tab.id}`}>
+                  <div style={{ fontSize: 60 }}>😵</div>
+                  <h2>Page couldn't load</h2>
+                  <p>{tab.errorMsg || 'All proxy attempts failed.'}</p>
+                  <button className="retry-btn" onClick={() => retryLoad(tab.id)} data-testid={`retry-${tab.id}`}>Try Again</button>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Error Page */}
-            {tab.id === activeTabId && tab.showError && (
-              <div className="error-page active" data-testid={`error-${tab.id}`}>
-                <div style={{ fontSize: 60 }}>😵</div>
-                <h2>Page couldn't load</h2>
-                <p>{tab.errorMsg || 'All proxy attempts failed.'}</p>
-                <button className="retry-btn" onClick={() => retryLoad(tab.id)} data-testid={`retry-${tab.id}`}>Try Again</button>
-              </div>
-            )}
+              {/* Browser Frame - show if we have content, keeps visible while loading new content */}
+              {showFrame && (
+                <iframe
+                  ref={el => iframeRefs.current[tab.id] = el}
+                  className="browser-frame active"
+                  src={tab.blobUrl}
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                  title={`Browser frame ${tab.id}`}
+                  data-testid={`frame-${tab.id}`}
+                />
+              )}
 
-            {/* Browser Frame */}
-            {tab.id === activeTabId && tab.blobUrl && !tab.showError && (
-              <iframe
-                ref={el => iframeRefs.current[tab.id] = el}
-                className="browser-frame active"
-                src={tab.blobUrl}
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                title={`Browser frame ${tab.id}`}
-                data-testid={`frame-${tab.id}`}
-              />
-            )}
-          </React.Fragment>
-        ))}
+              {/* Loading state when we don't have content yet */}
+              {isActive && loading && !tab.blobUrl && !tab.showError && (
+                <div className="loading-page active">
+                  <div className="spinner large"></div>
+                  <div className="loading-page-text">{loadingText}</div>
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
       </div>
 
       {/* Status Bar */}
