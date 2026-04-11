@@ -237,10 +237,11 @@ function App() {
 
     const q = encodeURIComponent(query);
     
+    // Try SearXNG instances first
     try {
       const data = await Promise.any(
         SEARX.map(base =>
-          fetchT(`${base}/search?q=${q}&format=json&categories=general&language=en`, 8000)
+          fetchT(`${base}/search?q=${q}&format=json&categories=general&language=en`, 6000)
             .then(r => { if (!r.ok) throw new Error('bad'); return r.json(); })
             .then(d => { if (!d.results || d.results.length === 0) throw new Error('empty'); return d; })
         )
@@ -262,9 +263,9 @@ function App() {
       
       setStatusText(`${data.results.length} results for: ${query}`);
     } catch {
+      // SearXNG failed, try loading Google search directly through proxy
       stopLoading();
-      // Fallback to DuckDuckGo
-      loadURL('https://html.duckduckgo.com/html/?q=' + encodeURIComponent(query), currentTabId);
+      loadURL('https://www.google.com/search?q=' + encodeURIComponent(query), currentTabId);
     }
   }, [activeTabId, buildSearchPage, startLoading, stopLoading]);
 
