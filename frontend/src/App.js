@@ -399,10 +399,10 @@ function Browser() {
     try {
       html = await Promise.any(
         PROXIES.map(px =>
-          fetchT(px(url), 8000).then(async r => {
+          fetchT(px(url), 12000).then(async r => {
             if (!r.ok) throw new Error('bad status');
             const t = await r.text();
-            if (!t || t.length < 200) throw new Error('empty');
+            if (!t || t.length < 50) throw new Error('empty');
             return t;
           })
         )
@@ -426,13 +426,6 @@ function Browser() {
       return;
     }
 
-    // Inject base tag for relative URLs (without target="_blank")
-    if (!/]*>/i.test(html)) {
-      const base = `<base href="${url}">`;
-      html = html.replace(/(<head[^>]*>)/i, '$1' + base);
-      if (!html.includes('<base')) html = base + html;
-    }
-
     // Inject base tag for relative URLs
     // Get the origin for the base tag
     let baseOrigin = url;
@@ -442,6 +435,17 @@ function Browser() {
       const base = `<base href="${baseOrigin}">`;
       html = html.replace(/(<head[^>]*>)/i, '$1' + base);
       if (!html.includes('<base')) html = base + html;
+    }
+
+    // Remove Content-Security-Policy meta tags that block rendering in blob URLs
+    html = html.replace(/<meta[^>]*http-equiv\s*=\s*["']?Content-Security-Policy["']?[^>]*>/gi, '');
+    
+    // Inject fallback styles to prevent black/blank screens
+    const fallbackStyles = `<style>html,body{background:#fff!important;color:#000!important;min-height:100%}</style>`;
+    if (html.includes('</head>')) {
+      html = html.replace('</head>', fallbackStyles + '</head>');
+    } else {
+      html = fallbackStyles + html;
     }
 
     // Escape URL for safe JS string insertion
