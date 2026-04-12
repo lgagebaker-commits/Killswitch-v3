@@ -440,12 +440,60 @@ function Browser() {
     // Remove Content-Security-Policy meta tags that block rendering in blob URLs
     html = html.replace(/<meta[^>]*http-equiv\s*=\s*["']?Content-Security-Policy["']?[^>]*>/gi, '');
     
-    // Inject fallback styles to prevent black/blank screens
-    const fallbackStyles = `<style>html,body{background:#fff!important;color:#000!important;min-height:100%}</style>`;
+    // Remove framebusting / anti-iframe scripts that hide content or redirect
+    // Pattern 1: if (top != self) { ... } or if (top !== self) { ... }
+    html = html.replace(/if\s*\(\s*top\s*!==?\s*self\s*\)\s*\{[^}]*\}/gi, '');
+    // Pattern 2: if (window.top !== window.self) { ... }
+    html = html.replace(/if\s*\(\s*window\.top\s*!==?\s*window\.self\s*\)\s*\{[^}]*\}/gi, '');
+    // Pattern 3: if (self !== top) { ... }
+    html = html.replace(/if\s*\(\s*self\s*!==?\s*top\s*\)\s*\{[^}]*\}/gi, '');
+    // Pattern 4: if (window !== window.top) { ... }
+    html = html.replace(/if\s*\(\s*window\s*!==?\s*window\.top\s*\)\s*\{[^}]*\}/gi, '');
+    // Pattern 5: if (parent !== self) or if (parent.frames.length > 0) etc
+    html = html.replace(/if\s*\(\s*parent\s*!==?\s*self\s*\)\s*\{[^}]*\}/gi, '');
+    // Pattern 6: top.location = or top.location.href = (standalone statements)
+    html = html.replace(/top\.location\s*(?:\.href)?\s*=\s*[^;]+;/gi, '');
+    // Pattern 7: Remove display:none on body specifically from framebusters
+    html = html.replace(/body\s*\{\s*display\s*:\s*none\s*;?\s*\}/gi, '');
+    // Pattern 8: document.write that hides body
+    html = html.replace(/document\.write\s*\(\s*['"][^'"]*display\s*:\s*none[^'"]*['"]\s*\)/gi, '');
+    // Pattern 9: X-Frame-Options meta
+    html = html.replace(/<meta[^>]*http-equiv\s*=\s*["']?X-Frame-Options["']?[^>]*>/gi, '');
+
+    // Inject fallback styles to prevent black/blank screens + override any display:none on body
+    const fallbackStyles = `<style>html,body{background:#fff!important;color:#000!important;min-height:100%!important;display:block!important;visibility:visible!important;opacity:1!important}</style>`;
     if (html.includes('</head>')) {
       html = html.replace('</head>', fallbackStyles + '</head>');
     } else {
       html = fallbackStyles + html;
+    }
+    
+    // Also inject a script at the very top to neutralize framebusters before they run
+    const framebustKiller = `<script>
+      // Override top/parent references to prevent frame detection
+      try {
+        if (window.self !== window.top) {
+          Object.defineProperty(window, 'top', { get: function() { return window.self; } });
+          Object.defineProperty(window, 'parent', { get: function() { return window.self; } });
+        }
+      } catch(e) {}
+      // Prevent document.write from hiding body
+      var origWrite = document.write.bind(document);
+      document.write = function(s) {
+        if (s && typeof s === 'string' && s.indexOf('display') !== -1 && s.indexOf('none') !== -1) {
+          return; // Block framebuster display:none writes
+        }
+        origWrite(s);
+      };
+    </script>`;
+    
+    // Inject at very beginning of head (before any other scripts)
+    if (html.includes('<head>')) {
+      html = html.replace('<head>', '<head>' + framebustKiller);
+    } else if (html.includes('<head ')) {
+      html = html.replace(/(<head[^>]*>)/i, '$1' + framebustKiller);
+    } else {
+      html = framebustKiller + html;
     }
 
     // Escape URL for safe JS string insertion
