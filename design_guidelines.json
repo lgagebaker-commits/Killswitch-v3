@@ -1,0 +1,138 @@
+{
+  "theme": "dark",
+  "archetype": "Archetype 4 (Swiss & High-Contrast - Dark Adaptation)",
+  "rationale": "For a privacy-focused proxy browser ('Killswitch'), we need an ultra-clean, stealthy, function-first dark mode. Emojis make it look toy-like; replacing them with crisp SVGs and high-contrast geometric typography ensures an authoritative, modern, 'power-user' feel.",
+  "typography": {
+    "heading_font": "Manrope",
+    "body_font": "IBM Plex Sans",
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl tracking-tight font-black",
+      "h2": "text-2xl sm:text-3xl tracking-tight font-bold",
+      "h3": "text-xl font-semibold",
+      "ui_text": "text-sm font-medium tracking-wide",
+      "body": "text-base leading-relaxed"
+    },
+    "rules": "Never use Inter for headings. Use tight tracking for headings (tracking-tighter) and uppercase/wide tracking for overlines and labels (tracking-[0.2em]). For UI text (tabs, address bar), prioritize high legibility."
+  },
+  "colors": {
+    "primary": {
+      "background": "#000000",
+      "frame": "#0a0a0a",
+      "toolbar": "#141414",
+      "address_bar": "#1e1e1e"
+    },
+    "text": {
+      "primary": "rgba(255, 255, 255, 0.95)",
+      "secondary": "rgba(255, 255, 255, 0.60)",
+      "muted": "rgba(255, 255, 255, 0.40)"
+    },
+    "accent": {
+      "active": "#ffffff",
+      "hover_bg": "rgba(255, 255, 255, 0.05)",
+      "focus_ring": "rgba(255, 255, 255, 0.2)"
+    },
+    "status": {
+      "destructive": "#ef4444",
+      "success": "#10b981",
+      "warning": "#f59e0b"
+    },
+    "borders": {
+      "default": "rgba(255, 255, 255, 0.10)",
+      "subtle": "rgba(255, 255, 255, 0.05)"
+    }
+  },
+  "layout_and_spacing": {
+    "window": {
+      "border_radius": "rounded-lg",
+      "shadow": "shadow-[0_0_40px_rgba(0,0,0,0.5)]",
+      "background_classes": "bg-[#0a0a0a] min-h-screen text-white flex flex-col"
+    },
+    "title_bar": {
+      "height": "h-10",
+      "padding": "px-4"
+    },
+    "toolbar": {
+      "height": "h-14",
+      "padding": "px-4 gap-2",
+      "background_classes": "bg-[#141414] border-b border-white/10 flex items-center"
+    },
+    "address_bar": {
+      "border_radius": "rounded-full",
+      "padding": "px-4 py-2",
+      "background_classes": "bg-[#1e1e1e] border border-white/10 focus-within:border-white/30 focus-within:ring-1 focus-within:ring-white/30",
+      "alignment": "flex items-center gap-3",
+      "max_width": "max-w-2xl w-full mx-auto"
+    },
+    "tabs": {
+      "height": "h-8",
+      "active_style": "bg-[#141414] text-white rounded-t-md border-t border-x border-white/10 relative z-10 flex items-center justify-between px-3 gap-2",
+      "inactive_style": "bg-transparent text-white/60 hover:bg-white/5 rounded-t-md flex items-center justify-between px-3 gap-2",
+      "close_button": "opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/20 rounded-full p-0.5"
+    },
+    "new_tab": {
+      "search_box": "max-w-xl w-full rounded-2xl bg-[#1e1e1e] border border-white/10 p-4 focus-within:ring-1 focus-within:ring-white/30 shadow-lg text-lg",
+      "quick_links_grid": "grid grid-cols-3 sm:grid-cols-6 gap-6 sm:gap-8 mt-12 max-w-3xl w-full"
+    }
+  },
+  "components": {
+    "buttons": {
+      "icon_button": "p-2 rounded-md hover:bg-white/10 text-white/70 hover:text-white transition-colors flex items-center justify-center",
+      "primary": "bg-white text-black font-semibold px-4 py-2 rounded-md hover:bg-gray-200 transition-colors",
+      "destructive": "bg-transparent text-red-500 border border-red-500/50 hover:bg-red-500/10 px-4 py-2 rounded-md transition-colors"
+    },
+    "surfaces": {
+      "panel": "bg-[#141414] border border-white/10 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl"
+    }
+  },
+  "icon_mapping": {
+    "instructions": "Replace ALL emojis throughout the UI with these SVGs. Add 'react-icons' package (yarn add react-icons) if not present. Use lucide-react for UI and react-icons/fa for exact brand logos.",
+    "window_controls": {
+      "close": "X (lucide-react, size=16)",
+      "minimize": "Minus (lucide-react, size=16)",
+      "maximize": "Square (lucide-react, size=14)"
+    },
+    "navigation": {
+      "back": "ArrowLeft (lucide-react)",
+      "forward": "ArrowRight (lucide-react)",
+      "refresh": "RotateCw (lucide-react)",
+      "home": "Home (lucide-react)",
+      "search": "Search (lucide-react, size=18)",
+      "shield": "Shield (lucide-react, for proxy/secure indicator in address bar)"
+    },
+    "browser_ui": {
+      "settings": "Settings (lucide-react)",
+      "user_menu": "User (lucide-react)",
+      "admin_panel": "ShieldAlert or LayoutDashboard (lucide-react)",
+      "bookmarks": "Bookmark (lucide-react)",
+      "new_tab": "Plus (lucide-react)",
+      "close_tab": "X (lucide-react, size=14)"
+    },
+    "quick_links_logos": {
+      "Google": "FaGoogle (react-icons/fa, size=24)",
+      "YouTube": "FaYoutube (react-icons/fa, size=24)",
+      "GitHub": "FaGithub (react-icons/fa, size=24)",
+      "Wikipedia": "FaWikipediaW (react-icons/fa, size=24)",
+      "Reddit": "FaReddit (react-icons/fa, size=24)",
+      "Hacker News": "FaHackerNewsSquare (react-icons/fa, size=24)"
+    }
+  },
+  "media_and_images": {
+    "instructions_to_main_agent": "Use this background image for the New Tab page (behind the search and quick links) or the Login/Register screens. Apply an overlay (e.g., bg-black/70 or bg-[#0a0a0a]/80) to ensure content remains readable. Do NOT use placeholder text for logos; use the exact react-icons specified above.",
+    "image_urls": [
+      {
+        "category": "new_tab_background",
+        "description": "A dark, textured minimal surface for the new tab and login backgrounds.",
+        "url": "https://images.unsplash.com/photo-1762343264418-1467f9394f49?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHwxfHxkYXJrJTIwbWluaW1hbCUyMGFic3RyYWN0JTIwZ2VvbWV0cmljJTIwdGV4dHVyZXxlbnwwfHx8fDE3NzU5NzcxMjd8MA&ixlib=rb-4.1.0&q=85"
+      }
+    ]
+  },
+  "motion_and_interaction": {
+    "hover": "Subtle background shifts (bg-white/5 to bg-white/10). Maintain instant UI response without excessive bouncy animations.",
+    "focus": "High contrast ring (focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:outline-none) for inputs and address bar.",
+    "tabs": "Instant state switch to feel extremely snappy, native, and lightweight."
+  },
+  "accessibility_and_testing": {
+    "contrast": "Ensure minimum 4.5:1 ratio for text. Grey text must be at least text-white/60.",
+    "test_ids": "Apply explicit data-testid attributes to all interactive elements (e.g., data-testid='tab-close-btn', data-testid='nav-back-btn', data-testid='address-bar-input', data-testid='quick-link-google')."
+  }
+}
