@@ -1,0 +1,273 @@
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  padding: 20px;
+}
+
+.auth-card {
+  background: #202124;
+  border-radius: 16px;
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid #3c4043;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-header h1 {
+  font-size: 32px;
+  font-weight: 300;
+  color: #e8eaed;
+  margin-bottom: 8px;
+}
+
+.auth-header p {
+  color: #9aa0a6;
+  font-size: 14px;
+}
+
+.auth-header p strong {
+  color: #8ab4f8;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: #3c4043;
+  color: #9aa0a6;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-tab:hover {
+  background: #484a4d;
+  color: #e8eaed;
+}
+
+.auth-tab.active {
+  background: #8ab4f8;
+  color: #000;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-error {
+  background: rgba(234, 67, 53, 0.1);
+  border: 1px solid #ea4335;
+  color: #ea4335;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  color: #9aa0a6;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.input-group input {
+  background: #3c4043;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: #e8eaed;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+  border-color: #8ab4f8;
+}
+
+.input-group input::placeholder {
+  color: #5f6368;
+}
+
+.privacy-input {
+  letter-spacing: 4px;
+  font-size: 18px !important;
+}
+
+.privacy-note {
+  color: #5f6368;
+  font-size: 11px;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.privacy-note::before {
+  content: '🔒';
+  font-size: 12px;
+}
+
+.auth-submit {
+  background: #8ab4f8;
+  color: #000;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+
+.auth-submit:hover:not(:disabled) {
+  background: #aecbfa;
+}
+
+.auth-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-back-btn {
+  background: none;
+  border: 1px solid #3c4043;
+  color: #9aa0a6;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-back-btn:hover {
+  border-color: #8ab4f8;
+  color: #8ab4f8;
+}
+
+.auth-footer {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.auth-footer p {
+  color: #9aa0a6;
+  font-size: 14px;
+}
+
+.auth-footer button {
+  background: none;
+  border: none;
+  color: #8ab4f8;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+}
+
+.auth-footer button:hover {
+  text-decoration: underline;
+}
+
+/* Verification Code */
+.code-display {
+  background: #292a2d;
+  border: 1px solid #3c4043;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.code-display p {
+  color: #9aa0a6;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.code-box {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 8px;
+  color: #8ab4f8;
+  background: #3c4043;
+  padding: 12px 24px;
+  border-radius: 8px;
+  display: inline-block;
+  margin-bottom: 12px;
+  font-family: monospace;
+}
+
+.code-display small {
+  color: #5f6368;
+  font-size: 12px;
+}
+
+.code-verified {
+  text-align: center;
+  padding: 20px;
+}
+
+.check-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #28c840;
+  color: white;
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.code-verified p {
+  color: #28c840;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.spinner-small {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #3c4043;
+  border-top-color: #8ab4f8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+.code-sending {
+  text-align: center;
+  padding: 20px;
+}
+
+.code-sending p {
+  color: #9aa0a6;
+  font-size: 14px;
+}

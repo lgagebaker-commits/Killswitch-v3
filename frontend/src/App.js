@@ -1,5 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import './App.css';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import AuthPage from './components/AuthPage';
+import AdminPanel from './components/AdminPanel';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const PROXIES = [
   u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
@@ -18,15 +24,6 @@ const SEARX = [
   'https://searx.tiekoetter.com',
 ];
 
-const QL = [
-  { icon: '🔍', label: 'Google', url: 'https://www.google.com' },
-  { icon: '▶️', label: 'YouTube', url: 'https://www.youtube.com' },
-  { icon: '🐙', label: 'GitHub', url: 'https://github.com' },
-  { icon: '📖', label: 'Wikipedia', url: 'https://en.wikipedia.org' },
-  { icon: '🟠', label: 'Reddit', url: 'https://www.reddit.com' },
-  { icon: '📰', label: 'HN', url: 'https://news.ycombinator.com' },
-];
-
 const fetchT = (url, ms) => {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
@@ -35,7 +32,8 @@ const fetchT = (url, ms) => {
 
 const escapeHtml = (s) => String(s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-function App() {
+function Browser() {
+  const { user, logout } = useAuth();
   const [tabs, setTabs] = useState([]);
   const [activeTabId, setActiveTabId] = useState(null);
   const [addressBarValue, setAddressBarValue] = useState('');
@@ -44,11 +42,33 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Fetching via proxy…');
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [userBookmarks, setUserBookmarks] = useState([]);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [userSettings, setUserSettings] = useState({});
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
   
   const tabCounterRef = useRef(0);
   const blobURLsRef = useRef({});
   const loadingIntervalRef = useRef(null);
   const iframeRefs = useRef({});
+
+  // Load user data on mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const [bookmarksRes, settingsRes] = await Promise.all([
+          axios.get(`${API_URL}/api/bookmarks`, { withCredentials: true }),
+          axios.get(`${API_URL}/api/settings`, { withCredentials: true })
+        ]);
+        setUserBookmarks(bookmarksRes.data);
+        setUserSettings(settingsRes.data);
+        setShowBookmarks(settingsRes.data.show_bookmarks_bar !== false);
+      } catch (err) {
+        console.error('Failed to load user data:', err);
+      }
+    };
+    loadUserData();
+  }, []);
 
   // Initialize first tab
   useEffect(() => {
@@ -57,11 +77,16 @@ function App() {
     }
   }, []);
 
-  const getTab = useCallback((id) => tabs.find(t => t.id === id), [tabs]);
-
-  const updateTab = useCallback((id, updates) => {
-    setTabs(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  // Save history when visiting pages
+  const saveToHistory = useCallback(async (url, title) => {
+    try {
+      await axios.post(`${API_URL}/api/history`, { url, title }, { withCredentials: true });
+    } catch (err) {
+      console.error('Failed to save history:', err);
+    }
   }, []);
+
+  const getTab = useCallback((id) => tabs.find(t => t.id === id), [tabs]);
 
   const addTab = useCallback((url = null) => {
     const id = ++tabCounterRef.current;
@@ -265,7 +290,7 @@ function App() {
     } catch {
       // SearXNG failed, try loading Google search directly through proxy
       stopLoading();
-      loadURL('https://www.google.com/search?q=' + encodeURIComponent(query), currentTabId);
+      loadURL('https://www.google.com/search?q=' + encodeURIComponent(query) + '&hl=en&lr=lang_en', currentTabId);
     }
   }, [activeTabId, buildSearchPage, startLoading, stopLoading]);
 
@@ -305,6 +330,9 @@ function App() {
     startLoading();
     setStatusText('Connecting…');
 
+    // Save to history
+    saveToHistory(url, hostname);
+
     let html = null;
     setLoadingText('Racing proxies for fastest response…');
 
@@ -330,7 +358,7 @@ function App() {
         t.id === currentTabId ? {
           ...t,
           showError: true,
-          blobUrl: null, // Clear blobUrl so error page shows
+          blobUrl: null,
           errorMsg: `Could not load "${url}". The site may block proxy access, or you may be offline.`,
         } : t
       ));
@@ -346,22 +374,18 @@ function App() {
     }
 
     // Inject link interceptor script to handle clicks within iframe
-    // We need to store the original URL for resolving relative links
     const linkInterceptor = `
       <script>
         (function() {
           var originalBaseUrl = '${url}';
           
           function resolveUrl(href) {
-            // If it's already absolute, return as is
             if (href.startsWith('http://') || href.startsWith('https://')) {
               return href;
             }
-            // If it starts with //, prepend https:
             if (href.startsWith('//')) {
               return 'https:' + href;
             }
-            // Use URL API to resolve relative URL
             try {
               return new URL(href, originalBaseUrl).href;
             } catch(e) {
@@ -386,7 +410,6 @@ function App() {
             }
           }, true);
           
-          // Also handle form submissions
           document.addEventListener('submit', function(e) {
             var form = e.target;
             var action = form.getAttribute('action') || originalBaseUrl;
@@ -402,7 +425,6 @@ function App() {
       </script>
     `;
     
-    // Inject before closing body or at end
     if (html.includes('</body>')) {
       html = html.replace('</body>', linkInterceptor + '</body>');
     } else {
@@ -420,7 +442,7 @@ function App() {
       t.id === currentTabId ? { ...t, blobUrl, showError: false } : t
     ));
     setStatusText('Loaded: ' + url);
-  }, [activeTabId, doSearch, startLoading, stopLoading]);
+  }, [activeTabId, doSearch, startLoading, stopLoading, saveToHistory]);
 
   // Listen for messages from iframes
   useEffect(() => {
@@ -504,9 +526,41 @@ function App() {
     }
   }, [getTab, loadURL, doSearch]);
 
+  const addBookmark = useCallback(async () => {
+    const tab = getTab(activeTabId);
+    if (!tab?.url || tab.url.startsWith('search:')) return;
+    
+    try {
+      const bookmark = await axios.post(`${API_URL}/api/bookmarks`, {
+        title: tab.title,
+        url: tab.url,
+        icon: '🔗'
+      }, { withCredentials: true });
+      setUserBookmarks(prev => [...prev, bookmark.data]);
+      setStatusText('Bookmark added!');
+    } catch (err) {
+      console.error('Failed to add bookmark:', err);
+    }
+  }, [activeTabId, getTab]);
+
+  const handleLogout = async () => {
+    await logout();
+    setShowUserMenu(false);
+  };
+
   const activeTab = getTab(activeTabId);
   const canGoBack = activeTab && activeTab.historyIdx > 0;
   const canGoForward = activeTab && activeTab.historyIdx < activeTab.history.length - 1;
+
+  // Quick links including user bookmarks
+  const defaultQL = [
+    { icon: '🔍', label: 'Google', url: 'https://www.google.com' },
+    { icon: '▶️', label: 'YouTube', url: 'https://www.youtube.com' },
+    { icon: '🐙', label: 'GitHub', url: 'https://github.com' },
+    { icon: '📖', label: 'Wikipedia', url: 'https://en.wikipedia.org' },
+    { icon: '🟠', label: 'Reddit', url: 'https://www.reddit.com' },
+    { icon: '📰', label: 'HN', url: 'https://news.ycombinator.com' },
+  ];
 
   return (
     <div className="browser-container">
@@ -519,7 +573,53 @@ function App() {
         </div>
         <span style={{ marginLeft: 8, fontSize: 13, color: '#9aa0a6' }}>🌐 CreaoBrowser</span>
         <span className="proxy-badge">🔀 Proxy Mode</span>
+        
+        {/* User Menu */}
+        <div className="user-menu-container">
+          {user?.role === 'owner' && (
+            <button 
+              className="admin-panel-btn" 
+              onClick={() => setShowAdminPanel(true)}
+              data-testid="admin-panel-btn"
+            >
+              ⚙ Admin Panel
+            </button>
+          )}
+          <button 
+            className="user-menu-btn" 
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            data-testid="user-menu-btn"
+          >
+            👤 {user?.username}
+            {user?.role === 'owner' && <span className="owner-tag">Owner</span>}
+          </button>
+          {showUserMenu && (
+            <div className="user-menu-dropdown">
+              <div className="user-menu-header">
+                <span>👤</span>
+                <div>
+                  <strong>{user?.username}</strong>
+                  <small>{user?.role === 'owner' ? 'Owner' : user?.role}</small>
+                </div>
+              </div>
+              <div className="user-menu-divider"></div>
+              {user?.role === 'owner' && (
+                <button onClick={() => { setShowAdminPanel(true); setShowUserMenu(false); }} data-testid="open-admin-btn">
+                  ⚙ Admin Panel
+                </button>
+              )}
+              <button onClick={handleLogout} data-testid="logout-btn">
+                🚪 Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Admin Panel */}
+      {showAdminPanel && user?.role === 'owner' && (
+        <AdminPanel onClose={() => setShowAdminPanel(false)} />
+      )}
 
       {/* Tab Bar */}
       <div className="tab-bar" data-testid="tab-bar">
@@ -557,7 +657,8 @@ function App() {
           />
           <button className="go-btn" onClick={navigate} data-testid="go-btn">➤</button>
         </div>
-        <button className="nav-btn" onClick={() => setShowBookmarks(!showBookmarks)} data-testid="bookmarks-toggle">⭐</button>
+        <button className="nav-btn" onClick={addBookmark} title="Add Bookmark" data-testid="add-bookmark-btn">⭐</button>
+        <button className="nav-btn" onClick={() => setShowBookmarks(!showBookmarks)} data-testid="bookmarks-toggle">📑</button>
         <button className="nav-btn" data-testid="menu-btn">⋮</button>
       </div>
 
@@ -570,7 +671,11 @@ function App() {
           <div className="bookmark" onClick={() => loadURL('https://en.wikipedia.org')}>📖 Wikipedia</div>
           <div className="bookmark" onClick={() => loadURL('https://www.reddit.com')}>🟠 Reddit</div>
           <div className="bookmark" onClick={() => loadURL('https://news.ycombinator.com')}>📰 HN</div>
-          <div className="bookmark" onClick={() => loadURL('https://www.bbc.com/news')}>📡 BBC</div>
+          {userBookmarks.map(bm => (
+            <div key={bm.id} className="bookmark user-bookmark" onClick={() => loadURL(bm.url)}>
+              {bm.icon} {bm.title}
+            </div>
+          ))}
         </div>
       )}
 
@@ -596,7 +701,6 @@ function App() {
           const isActive = tab.id === activeTabId;
           const showNewTab = isActive && !tab.url && !tab.showError && !loading;
           const showError = isActive && tab.showError && !loading;
-          // Show frame if we have a blobUrl, even while loading (keeps previous content visible)
           const showFrame = isActive && tab.blobUrl && !tab.showError;
           
           return (
@@ -605,6 +709,7 @@ function App() {
               {showNewTab && (
                 <div className="new-tab-page active" data-testid={`ntp-${tab.id}`}>
                   <h1>🌐 CreaoBrowser</h1>
+                  <p className="welcome-text">Welcome, {user?.username}!</p>
                   <div className="search-box-wrap">
                     <span style={{ fontSize: 18, color: '#9aa0a6' }}>🔍</span>
                     <input
@@ -623,13 +728,26 @@ function App() {
                     />
                   </div>
                   <div className="quick-links">
-                    {QL.map((q, i) => (
+                    {defaultQL.map((q, i) => (
                       <div key={i} className="quick-link" onClick={() => loadURL(q.url)}>
                         <div className="ql-icon">{q.icon}</div>
                         <span>{q.label}</span>
                       </div>
                     ))}
                   </div>
+                  {userBookmarks.length > 0 && (
+                    <>
+                      <h3 className="bookmarks-title">Your Bookmarks</h3>
+                      <div className="quick-links">
+                        {userBookmarks.slice(0, 6).map((bm) => (
+                          <div key={bm.id} className="quick-link" onClick={() => loadURL(bm.url)}>
+                            <div className="ql-icon">{bm.icon}</div>
+                            <span>{bm.title.slice(0, 10)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -643,7 +761,7 @@ function App() {
                 </div>
               )}
 
-              {/* Browser Frame - show if we have content, keeps visible while loading new content */}
+              {/* Browser Frame */}
               {showFrame && (
                 <iframe
                   ref={el => iframeRefs.current[tab.id] = el}
@@ -670,10 +788,37 @@ function App() {
       {/* Status Bar */}
       <div className="status-bar">
         <span data-testid="status-text">{statusText}</span>
-        <span>CreaoBrowser v2.0 · Proxy Mode</span>
+        <span>CreaoBrowser v2.0 · Logged in as {user?.username}{user?.role === 'owner' ? ' (Owner)' : ''}</span>
       </div>
     </div>
   );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Loading CreaoBrowser...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthPage />;
+  }
+
+  return <Browser />;
 }
 
 export default App;
