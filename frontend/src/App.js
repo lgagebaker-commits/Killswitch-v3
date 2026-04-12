@@ -433,19 +433,45 @@ function Browser() {
       if (!html.includes('<base')) html = base + html;
     }
 
+    // Inject base tag for relative URLs
+    // Get the origin for the base tag
+    let baseOrigin = url;
+    try { baseOrigin = new URL(url).origin + new URL(url).pathname.replace(/\/[^/]*$/, '/'); } catch {}
+    
+    if (!/<base[\s>]/i.test(html)) {
+      const base = `<base href="${baseOrigin}">`;
+      html = html.replace(/(<head[^>]*>)/i, '$1' + base);
+      if (!html.includes('<base')) html = base + html;
+    }
+
+    // Escape URL for safe JS string insertion
+    const safeUrl = url.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    const safeOrigin = baseOrigin.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+
     // Inject link interceptor script to handle clicks within iframe
     const linkInterceptor = `
       <script>
         (function() {
-          var originalBaseUrl = '${url}';
+          var originalBaseUrl = '${safeUrl}';
+          var baseOrigin = '${safeOrigin}';
+          
+          function getOrigin(u) {
+            try { return new URL(u).origin; } catch(e) { return ''; }
+          }
           
           function resolveUrl(href) {
+            if (!href) return originalBaseUrl;
+            href = href.trim();
+            
+            // Already absolute
             if (href.startsWith('http://') || href.startsWith('https://')) {
               return href;
             }
+            // Protocol-relative
             if (href.startsWith('//')) {
               return 'https:' + href;
             }
+            // Resolve relative URL against the original page URL
             try {
               return new URL(href, originalBaseUrl).href;
             } catch(e) {
@@ -453,34 +479,81 @@ function Browser() {
             }
           }
           
+          // Extract real URL from Google/search redirect links
+          function extractRealUrl(href) {
+            // Google redirect: /url?q=https://...
+            if (href.includes('/url?') || href.includes('&url=') || href.includes('?url=')) {
+              try {
+                var u = new URL(href);
+                var real = u.searchParams.get('q') || u.searchParams.get('url') || u.searchParams.get('u');
+                if (real && (real.startsWith('http://') || real.startsWith('https://'))) {
+                  return real;
+                }
+              } catch(e) {}
+            }
+            return href;
+          }
+          
           document.addEventListener('click', function(e) {
             var target = e.target;
             while (target && target.tagName !== 'A') {
+              if (!target.parentElement) break;
               target = target.parentElement;
             }
-            if (target) {
+            if (target && target.tagName === 'A') {
               var href = target.getAttribute('href');
-              if (!href || href.startsWith('javascript:') || href.startsWith('#')) {
+              if (!href || href === '#' || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
                 return;
+              }
+              if (href.startsWith('#') && href.length > 1) {
+                return; // Allow anchor links
               }
               e.preventDefault();
               e.stopPropagation();
+              e.stopImmediatePropagation();
               var absoluteUrl = resolveUrl(href);
+              absoluteUrl = extractRealUrl(absoluteUrl);
               window.parent.postMessage({type: 'loadURL', url: absoluteUrl}, '*');
+              return false;
             }
           }, true);
           
+          // Intercept form submissions
           document.addEventListener('submit', function(e) {
             var form = e.target;
             var action = form.getAttribute('action') || originalBaseUrl;
             e.preventDefault();
-            var formData = new FormData(form);
-            var params = new URLSearchParams(formData).toString();
-            var absoluteAction = resolveUrl(action);
-            var separator = absoluteAction.includes('?') ? '&' : '?';
-            var url = absoluteAction + separator + params;
-            window.parent.postMessage({type: 'loadURL', url: url}, '*');
+            e.stopPropagation();
+            try {
+              var formData = new FormData(form);
+              var params = new URLSearchParams(formData).toString();
+              var absoluteAction = resolveUrl(action);
+              var separator = absoluteAction.includes('?') ? '&' : '?';
+              var url = absoluteAction + separator + params;
+              window.parent.postMessage({type: 'loadURL', url: url}, '*');
+            } catch(err) {}
+            return false;
           }, true);
+          
+          // Intercept window.open calls
+          var origOpen = window.open;
+          window.open = function(url) {
+            if (url) {
+              var absolute = resolveUrl(url);
+              absolute = extractRealUrl(absolute);
+              window.parent.postMessage({type: 'loadURL', url: absolute}, '*');
+            }
+            return null;
+          };
+          
+          // Intercept location changes
+          var origAssign = window.location.assign;
+          var origReplace = window.location.replace;
+          
+          // Block meta refresh redirects
+          document.querySelectorAll('meta[http-equiv="refresh"]').forEach(function(m) {
+            m.remove();
+          });
         })();
       </script>
     `;
