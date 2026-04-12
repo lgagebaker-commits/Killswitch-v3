@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import './AuthPage.css';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const AuthPage = () => {
   const [mode, setMode] = useState('login'); // login, register, verify-email, security-question
@@ -20,6 +23,7 @@ const AuthPage = () => {
   
   // Store registration data to use after email verification
   const [pendingRegData, setPendingRegData] = useState(null);
+  const [emailSent, setEmailSent] = useState(false);
   
   const { login, register, verifySecurity, sendVerificationCode } = useAuth();
 
@@ -80,7 +84,14 @@ const AuthPage = () => {
     setLoading(true);
     try {
       const data = await sendVerificationCode(email);
-      setSentCode(data.code);
+      if (data.code) {
+        // No email service - show code on screen
+        setSentCode(data.code);
+      } else {
+        // Email was sent via Resend
+        setSentCode(null);
+      }
+      setEmailSent(data.email_sent || false);
       setCodeSent(true);
       setError('');
     } catch (err) {
@@ -90,13 +101,37 @@ const AuthPage = () => {
     }
   };
 
-  const handleVerifyCode = () => {
+  const handleVerifyCode = async () => {
     setError('');
-    if (verificationCode.trim() === sentCode) {
-      setCodeVerified(true);
-      setError('');
+    if (!verificationCode.trim()) {
+      setError('Please enter the verification code');
+      return;
+    }
+    if (sentCode) {
+      // Code was shown on screen - verify locally
+      if (verificationCode.trim() === sentCode) {
+        setCodeVerified(true);
+      } else {
+        setError('Invalid verification code');
+      }
     } else {
-      setError('Invalid verification code');
+      // Code was emailed - verify against backend
+      setLoading(true);
+      try {
+        const { data } = await axios.post(`${API_URL}/api/auth/verify-code`, {
+          email,
+          code: verificationCode.trim()
+        });
+        if (data.valid) {
+          setCodeVerified(true);
+        } else {
+          setError('Invalid or expired verification code');
+        }
+      } catch (err) {
+        setError('Invalid or expired verification code');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -226,11 +261,18 @@ const AuthPage = () => {
               </div>
             ) : !codeVerified ? (
               <>
-                <div className="code-display">
-                  <p>Your verification code:</p>
-                  <div className="code-box">{sentCode}</div>
-                  <small>Enter this code below to verify your email</small>
-                </div>
+                {emailSent ? (
+                  <div className="code-display">
+                    <p>A verification code has been sent to your email.</p>
+                    <small>Check your inbox (and spam folder)</small>
+                  </div>
+                ) : sentCode ? (
+                  <div className="code-display">
+                    <p>Your verification code:</p>
+                    <div className="code-box">{sentCode}</div>
+                    <small>Enter this code below to verify your email</small>
+                  </div>
+                ) : null}
                 <div className="input-group">
                   <label>Verification Code</label>
                   <input

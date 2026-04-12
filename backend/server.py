@@ -10,10 +10,24 @@ import logging
 import bcrypt
 import jwt
 import secrets
+import asyncio
+import random
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
+
+# Resend setup
+try:
+    import resend
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+    if RESEND_API_KEY:
+        resend.api_key = RESEND_API_KEY
+    SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "onboarding@resend.dev")
+    HAS_RESEND = bool(RESEND_API_KEY)
+except ImportError:
+    HAS_RESEND = False
+    SENDER_EMAIL = ""
 
 ROOT_DIR = Path(__file__).parent
 
@@ -110,6 +124,10 @@ class SettingsUpdate(BaseModel):
     homepage: Optional[str] = None
     theme: Optional[str] = None
     show_bookmarks_bar: Optional[bool] = None
+    background_type: Optional[str] = None  # solid, gradient, animated, custom
+    background_value: Optional[str] = None  # color code, gradient, or image URL
+    tab_cloak_title: Optional[str] = None
+    tab_cloak_icon: Optional[str] = None
 
 class SavedPassword(BaseModel):
     site: str
@@ -173,11 +191,8 @@ async def send_verification_code(data: dict):
     if not email or "@" not in email:
         raise HTTPException(status_code=400, detail="Valid email is required")
     
-    # Generate 6-digit code
-    import random
     code = str(random.randint(100000, 999999))
     
-    # Store code with 10 minute expiry
     await db.verification_codes.delete_many({"email": email})
     await db.verification_codes.insert_one({
         "email": email,
@@ -188,8 +203,45 @@ async def send_verification_code(data: dict):
     
     logger.info(f"Verification code for {email}: {code}")
     
-    # Return the code directly (in production, send via email service)
-    return {"message": "Verification code sent", "code": code}
+    email_sent = False
+    if HAS_RESEND:
+        try:
+            html_content = f"""
+            <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:20px;background:#202124;color:#e8eaed;border-radius:12px;">
+                <h2 style="color:#8ab4f8;text-align:center;">CreaoBrowser</h2>
+                <p style="text-align:center;color:#9aa0a6;">Your verification code is:</p>
+                <div style="text-align:center;font-size:36px;font-weight:bold;letter-spacing:8px;color:#8ab4f8;background:#303134;padding:16px;border-radius:8px;margin:16px 0;">{code}</div>
+                <p style="text-align:center;color:#5f6368;font-size:12px;">This code expires in 10 minutes.</p>
+            </div>
+            """
+            await asyncio.to_thread(resend.Emails.send, {
+                "from": SENDER_EMAIL,
+                "to": [email],
+                "subject": f"CreaoBrowser Verification Code: {code}",
+                "html": html_content
+            })
+            email_sent = True
+            logger.info(f"Verification email sent to {email}")
+        except Exception as e:
+            logger.error(f"Failed to send email: {e}")
+    
+    return {"message": "Verification code sent", "code": code if not email_sent else None, "email_sent": email_sent}
+
+@auth_router.post("/verify-code")
+async def verify_code_endpoint(data: dict):
+    email = data.get("email", "").lower().strip()
+    code = data.get("code", "").strip()
+    
+    stored = await db.verification_codes.find_one({"email": email, "code": code})
+    if not stored:
+        return {"valid": False}
+    
+    expires = datetime.fromisoformat(stored["expires_at"])
+    if expires < datetime.now(timezone.utc):
+        return {"valid": False}
+    
+    await db.verification_codes.delete_many({"email": email})
+    return {"valid": True}
 
 @auth_router.post("/register")
 async def register(user_data: UserRegister, response: Response):
@@ -556,6 +608,14 @@ async def update_settings(settings: SettingsUpdate, user: dict = Depends(get_cur
         update_doc["settings.theme"] = settings.theme
     if settings.show_bookmarks_bar is not None:
         update_doc["settings.show_bookmarks_bar"] = settings.show_bookmarks_bar
+    if settings.background_type is not None:
+        update_doc["settings.background_type"] = settings.background_type
+    if settings.background_value is not None:
+        update_doc["settings.background_value"] = settings.background_value
+    if settings.tab_cloak_title is not None:
+        update_doc["settings.tab_cloak_title"] = settings.tab_cloak_title
+    if settings.tab_cloak_icon is not None:
+        update_doc["settings.tab_cloak_icon"] = settings.tab_cloak_icon
     
     if update_doc:
         await db.users.update_one(

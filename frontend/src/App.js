@@ -3,6 +3,7 @@ import './App.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthPage from './components/AuthPage';
 import AdminPanel from './components/AdminPanel';
+import SettingsPanel from './components/SettingsPanel';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -46,6 +47,9 @@ function Browser() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [userSettings, setUserSettings] = useState({});
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [clock, setClock] = useState('');
+  const [bgStyle, setBgStyle] = useState({});
   
   const tabCounterRef = useRef(0);
   const blobURLsRef = useRef({});
@@ -68,6 +72,62 @@ function Browser() {
       }
     };
     loadUserData();
+  }, []);
+
+  // Clock
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      setClock(`${h12}:${m} ${ampm}`);
+    };
+    updateClock();
+    const interval = setInterval(updateClock, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Apply tab cloaking from settings
+  useEffect(() => {
+    if (userSettings.tab_cloak_title) {
+      document.title = userSettings.tab_cloak_title;
+    }
+    if (userSettings.tab_cloak_icon) {
+      let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+      link.type = 'image/x-icon';
+      link.rel = 'shortcut icon';
+      link.href = userSettings.tab_cloak_icon;
+      document.head.appendChild(link);
+    }
+  }, [userSettings]);
+
+  // Apply background from settings
+  useEffect(() => {
+    const type = userSettings.background_type;
+    const value = userSettings.background_value;
+    if (type === 'solid') {
+      setBgStyle({ background: value });
+    } else if (type === 'animated') {
+      setBgStyle({ background: value, backgroundSize: '400% 400%', animation: 'bgMove 8s ease infinite' });
+    } else if (type === 'custom') {
+      setBgStyle({ backgroundImage: `url(${value})`, backgroundSize: 'cover', backgroundPosition: 'center' });
+    } else {
+      setBgStyle({});
+    }
+  }, [userSettings]);
+
+  const handleSettingsChange = (newSettings) => {
+    setUserSettings(newSettings);
+    setShowBookmarks(newSettings.show_bookmarks_bar !== false);
+  };
+
+  // Listen for loadurl events from settings history
+  useEffect(() => {
+    const handler = (e) => { if (e.detail) loadURL(e.detail); };
+    window.addEventListener('loadurl', handler);
+    return () => window.removeEventListener('loadurl', handler);
   }, []);
 
   // Initialize first tab
@@ -621,6 +681,15 @@ function Browser() {
         <AdminPanel onClose={() => setShowAdminPanel(false)} />
       )}
 
+      {/* Settings Panel */}
+      {showSettingsPanel && (
+        <SettingsPanel 
+          onClose={() => setShowSettingsPanel(false)} 
+          settings={userSettings}
+          onSettingsChange={handleSettingsChange}
+        />
+      )}
+
       {/* Tab Bar */}
       <div className="tab-bar" data-testid="tab-bar">
         {tabs.map(tab => (
@@ -659,7 +728,7 @@ function Browser() {
         </div>
         <button className="nav-btn" onClick={addBookmark} title="Add Bookmark" data-testid="add-bookmark-btn">⭐</button>
         <button className="nav-btn" onClick={() => setShowBookmarks(!showBookmarks)} data-testid="bookmarks-toggle">📑</button>
-        <button className="nav-btn" data-testid="menu-btn">⋮</button>
+        <button className="nav-btn" onClick={() => setShowSettingsPanel(true)} data-testid="settings-btn">⋮</button>
       </div>
 
       {/* Bookmarks Bar */}
@@ -707,7 +776,8 @@ function Browser() {
             <React.Fragment key={tab.id}>
               {/* New Tab Page */}
               {showNewTab && (
-                <div className="new-tab-page active" data-testid={`ntp-${tab.id}`}>
+                <div className="new-tab-page active" style={bgStyle} data-testid={`ntp-${tab.id}`}>
+                  <div className="ntp-clock" data-testid="clock">{clock}</div>
                   <h1>🌐 CreaoBrowser</h1>
                   <p className="welcome-text">Welcome, {user?.username}!</p>
                   <div className="search-box-wrap">

@@ -447,6 +447,23 @@ body {
   display: flex;
 }
 
+.ntp-clock {
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  font-size: 42px;
+  font-weight: 200;
+  color: #e8eaed;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 12px rgba(0,0,0,.4);
+}
+
+@keyframes bgMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .new-tab-page h1 {
   font-size: 46px;
   font-weight: 300;
