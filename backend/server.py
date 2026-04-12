@@ -246,7 +246,8 @@ async def register(user_data: UserRegister, response: Response):
         "username": username,
         "role": "user",
         "created_at": user_doc["created_at"],
-        "requires_verification": False
+        "requires_verification": False,
+        "access_token": access_token
     }
 
 @auth_router.post("/login")
@@ -317,7 +318,8 @@ async def login(user_data: UserLogin, response: Response, request: Request):
         "username": user["username"],
         "role": user.get("role", "user"),
         "created_at": user.get("created_at", ""),
-        "requires_verification": False
+        "requires_verification": False,
+        "access_token": access_token
     }
 
 @auth_router.post("/verify-security")
@@ -351,7 +353,8 @@ async def verify_security(data: SecurityVerify, response: Response):
         "id": user_id,
         "username": user["username"],
         "role": user.get("role", "user"),
-        "created_at": user.get("created_at", "")
+        "created_at": user.get("created_at", ""),
+        "access_token": access_token
     }
 
 @auth_router.post("/logout")
