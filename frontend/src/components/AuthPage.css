@@ -3,18 +3,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  background: #000;
   padding: 20px;
 }
 
 .auth-card {
-  background: #202124;
+  background: #0a0a0a;
   border-radius: 16px;
   padding: 40px;
   width: 100%;
-  max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  border: 1px solid #3c4043;
+  max-width: 400px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255,255,255,0.08);
 }
 
 .auth-header {
@@ -23,14 +23,16 @@
 }
 
 .auth-header h1 {
-  font-size: 32px;
-  font-weight: 300;
-  color: #e8eaed;
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
   margin-bottom: 8px;
+  font-family: 'Manrope', sans-serif;
+  letter-spacing: -0.5px;
 }
 
 .auth-header p {
-  color: #9aa0a6;
+  color: rgba(255,255,255,0.35);
   font-size: 14px;
 }
 
@@ -48,22 +50,23 @@
   flex: 1;
   padding: 12px;
   border: none;
-  background: #3c4043;
-  color: #9aa0a6;
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.4);
   font-size: 14px;
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .auth-tab:hover {
-  background: #484a4d;
-  color: #e8eaed;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
 }
 
 .auth-tab.active {
-  background: #8ab4f8;
+  background: #fff;
   color: #000;
 }
 
@@ -90,28 +93,29 @@
 }
 
 .input-group label {
-  color: #9aa0a6;
+  color: rgba(255,255,255,0.4);
   font-size: 13px;
   font-weight: 500;
 }
 
 .input-group input {
-  background: #3c4043;
-  border: 2px solid transparent;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 8px;
   padding: 14px 16px;
-  color: #e8eaed;
+  color: #fff;
   font-size: 15px;
   outline: none;
   transition: border-color 0.2s;
+  font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .input-group input:focus {
-  border-color: #8ab4f8;
+  border-color: rgba(255,255,255,0.3);
 }
 
 .input-group input::placeholder {
-  color: #5f6368;
+  color: rgba(255,255,255,0.2);
 }
 
 .privacy-input {
@@ -129,12 +133,11 @@
 }
 
 .privacy-note::before {
-  content: '🔒';
-  font-size: 12px;
+  content: '';
 }
 
 .auth-submit {
-  background: #8ab4f8;
+  background: #fff;
   color: #000;
   border: none;
   padding: 14px;
@@ -142,33 +145,35 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: opacity 0.2s;
   margin-top: 8px;
+  font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .auth-submit:hover:not(:disabled) {
-  background: #aecbfa;
+  opacity: 0.85;
 }
 
 .auth-submit:disabled {
-  opacity: 0.6;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .auth-back-btn {
   background: none;
-  border: 1px solid #3c4043;
-  color: #9aa0a6;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.4);
   padding: 10px;
   border-radius: 8px;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
+  font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .auth-back-btn:hover {
-  border-color: #8ab4f8;
-  color: #8ab4f8;
+  border-color: rgba(255,255,255,0.3);
+  color: #fff;
 }
 
 .auth-footer {
@@ -177,18 +182,19 @@
 }
 
 .auth-footer p {
-  color: #9aa0a6;
+  color: rgba(255,255,255,0.35);
   font-size: 14px;
 }
 
 .auth-footer button {
   background: none;
   border: none;
-  color: #8ab4f8;
+  color: #fff;
   font-size: 14px;
   cursor: pointer;
   padding: 0;
   margin-left: 4px;
+  font-weight: 600;
 }
 
 .auth-footer button:hover {
@@ -197,15 +203,15 @@
 
 /* Verification Code */
 .code-display {
-  background: #292a2d;
-  border: 1px solid #3c4043;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
   padding: 20px;
   text-align: center;
 }
 
 .code-display p {
-  color: #9aa0a6;
+  color: rgba(255,255,255,0.5);
   font-size: 13px;
   margin-bottom: 12px;
 }
@@ -214,8 +220,8 @@
   font-size: 32px;
   font-weight: 700;
   letter-spacing: 8px;
-  color: #8ab4f8;
-  background: #3c4043;
+  color: #fff;
+  background: rgba(255,255,255,0.05);
   padding: 12px 24px;
   border-radius: 8px;
   display: inline-block;

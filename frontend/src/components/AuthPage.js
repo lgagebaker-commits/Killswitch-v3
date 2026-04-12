@@ -214,7 +214,7 @@ const AuthPage = () => {
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            <h1>🔐 Security Verification</h1>
+            <h1>Security Verification</h1>
             <p>Answer your security question to continue</p>
           </div>
           <form onSubmit={handleSecurityVerify} className="auth-form">
@@ -248,7 +248,7 @@ const AuthPage = () => {
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            <h1>📧 Verify Email</h1>
+            <h1>Verify Email</h1>
             <p>Enter the verification code sent to <strong>{email}</strong></p>
           </div>
           <div className="auth-form">
@@ -312,8 +312,8 @@ const AuthPage = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1>🌐 CreaoBrowser</h1>
-          <p>Your secure, private web browser</p>
+          <h1>Killswitch</h1>
+          <p>Secure proxy browser</p>
         </div>
 
         <div className="auth-tabs">

@@ -5,6 +5,8 @@ import AuthPage from './components/AuthPage';
 import AdminPanel from './components/AdminPanel';
 import SettingsPanel from './components/SettingsPanel';
 import axios from 'axios';
+import { ArrowLeft, ArrowRight, RotateCw, Home, Search, Shield, Settings, User, LayoutDashboard, Bookmark, BookmarkPlus, Plus, X, Globe, AlertTriangle, LogOut, Loader2 } from 'lucide-react';
+import { FaGoogle, FaYoutube, FaGithub, FaWikipediaW, FaReddit, FaHackerNews } from 'react-icons/fa';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -737,14 +739,14 @@ function Browser() {
   const canGoBack = activeTab && activeTab.historyIdx > 0;
   const canGoForward = activeTab && activeTab.historyIdx < activeTab.history.length - 1;
 
-  // Quick links including user bookmarks
+  // Quick links
   const defaultQL = [
-    { icon: '🔍', label: 'Google', url: 'https://www.google.com' },
-    { icon: '▶️', label: 'YouTube', url: 'https://www.youtube.com' },
-    { icon: '🐙', label: 'GitHub', url: 'https://github.com' },
-    { icon: '📖', label: 'Wikipedia', url: 'https://en.wikipedia.org' },
-    { icon: '🟠', label: 'Reddit', url: 'https://www.reddit.com' },
-    { icon: '📰', label: 'HN', url: 'https://news.ycombinator.com' },
+    { icon: <FaGoogle size={22} />, label: 'Google', url: 'https://www.google.com' },
+    { icon: <FaYoutube size={22} />, label: 'YouTube', url: 'https://www.youtube.com' },
+    { icon: <FaGithub size={22} />, label: 'GitHub', url: 'https://github.com' },
+    { icon: <FaWikipediaW size={22} />, label: 'Wikipedia', url: 'https://en.wikipedia.org' },
+    { icon: <FaReddit size={22} />, label: 'Reddit', url: 'https://www.reddit.com' },
+    { icon: <FaHackerNews size={22} />, label: 'HN', url: 'https://news.ycombinator.com' },
   ];
 
   return (
@@ -756,8 +758,11 @@ function Browser() {
           <div className="dot min"></div>
           <div className="dot max"></div>
         </div>
-        <span style={{ marginLeft: 8, fontSize: 13, color: '#9aa0a6' }}>🌐 CreaoBrowser</span>
-        <span className="proxy-badge">🔀 Proxy Mode</span>
+        <div className="title-brand">
+          <Shield size={14} />
+          <span>Killswitch</span>
+        </div>
+        <span className="proxy-badge"><Shield size={10} /> Proxy</span>
         
         {/* User Menu */}
         <div className="user-menu-container">
@@ -767,7 +772,7 @@ function Browser() {
               onClick={() => setShowAdminPanel(true)}
               data-testid="admin-panel-btn"
             >
-              ⚙ Admin Panel
+              <LayoutDashboard size={14} /> Admin
             </button>
           )}
           <button 
@@ -775,13 +780,13 @@ function Browser() {
             onClick={() => setShowUserMenu(!showUserMenu)}
             data-testid="user-menu-btn"
           >
-            👤 {user?.username}
-            {user?.role === 'owner' && <span className="owner-tag">Owner</span>}
+            <User size={14} /> {user?.username}
+            {user?.role === 'owner' && <span className="owner-tag">OWNER</span>}
           </button>
           {showUserMenu && (
             <div className="user-menu-dropdown">
               <div className="user-menu-header">
-                <span>👤</span>
+                <User size={20} />
                 <div>
                   <strong>{user?.username}</strong>
                   <small>{user?.role === 'owner' ? 'Owner' : user?.role}</small>
@@ -790,11 +795,11 @@ function Browser() {
               <div className="user-menu-divider"></div>
               {user?.role === 'owner' && (
                 <button onClick={() => { setShowAdminPanel(true); setShowUserMenu(false); }} data-testid="open-admin-btn">
-                  ⚙ Admin Panel
+                  <LayoutDashboard size={14} /> Admin Panel
                 </button>
               )}
               <button onClick={handleLogout} data-testid="logout-btn">
-                🚪 Logout
+                <LogOut size={14} /> Logout
               </button>
             </div>
           )}
@@ -824,50 +829,50 @@ function Browser() {
             onClick={() => switchTab(tab.id)}
             data-testid={`tab-${tab.id}`}
           >
-            <span>🌐</span>
+            <Globe size={13} className="tab-icon" />
             <span className="tab-title">{tab.title}</span>
-            <button className="close-tab" onClick={(e) => closeTab(e, tab.id)} data-testid={`close-tab-${tab.id}`}>✕</button>
+            <button className="close-tab" onClick={(e) => closeTab(e, tab.id)} data-testid={`close-tab-${tab.id}`}><X size={13} /></button>
           </div>
         ))}
-        <button className="new-tab-btn" onClick={() => addTab()} data-testid="new-tab-btn">+</button>
+        <button className="new-tab-btn" onClick={() => addTab()} data-testid="new-tab-btn"><Plus size={16} /></button>
       </div>
 
       {/* Toolbar */}
       <div className="toolbar">
-        <button className="nav-btn" onClick={goBack} disabled={!canGoBack} data-testid="back-btn">←</button>
-        <button className="nav-btn" onClick={goForward} disabled={!canGoForward} data-testid="forward-btn">→</button>
-        <button className="nav-btn" onClick={refresh} data-testid="refresh-btn">↻</button>
-        <button className="nav-btn" onClick={goHome} data-testid="home-btn">🏠</button>
+        <button className="nav-btn" onClick={goBack} disabled={!canGoBack} data-testid="back-btn"><ArrowLeft size={18} /></button>
+        <button className="nav-btn" onClick={goForward} disabled={!canGoForward} data-testid="forward-btn"><ArrowRight size={18} /></button>
+        <button className="nav-btn" onClick={refresh} data-testid="refresh-btn"><RotateCw size={16} /></button>
+        <button className="nav-btn" onClick={goHome} data-testid="home-btn"><Home size={17} /></button>
         <div className="address-bar-wrap">
-          <span style={{ fontSize: 14, color: '#aaa' }}>🔒</span>
+          <Shield size={14} className="address-icon" />
           <input
             className="address-bar"
             type="text"
-            placeholder="Search Google or enter a URL…"
+            placeholder="Search or enter URL…"
             value={addressBarValue}
             onChange={(e) => setAddressBarValue(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && navigate()}
             data-testid="address-bar"
           />
-          <button className="go-btn" onClick={navigate} data-testid="go-btn">➤</button>
+          <button className="go-btn" onClick={navigate} data-testid="go-btn"><Search size={15} /></button>
         </div>
-        <button className="nav-btn" onClick={addBookmark} title="Add Bookmark" data-testid="add-bookmark-btn">⭐</button>
-        <button className="nav-btn" onClick={() => setShowBookmarks(!showBookmarks)} data-testid="bookmarks-toggle">📑</button>
-        <button className="nav-btn" onClick={() => setShowSettingsPanel(true)} data-testid="settings-btn">⋮</button>
+        <button className="nav-btn" onClick={addBookmark} title="Add Bookmark" data-testid="add-bookmark-btn"><BookmarkPlus size={17} /></button>
+        <button className="nav-btn" onClick={() => setShowBookmarks(!showBookmarks)} data-testid="bookmarks-toggle"><Bookmark size={16} /></button>
+        <button className="nav-btn" onClick={() => setShowSettingsPanel(true)} data-testid="settings-btn"><Settings size={16} /></button>
       </div>
 
       {/* Bookmarks Bar */}
       {showBookmarks && (
         <div className="bookmarks-bar" data-testid="bookmarks-bar">
-          <div className="bookmark" onClick={() => loadURL('https://www.google.com')}>🔍 Google</div>
-          <div className="bookmark" onClick={() => loadURL('https://www.youtube.com')}>▶️ YouTube</div>
-          <div className="bookmark" onClick={() => loadURL('https://github.com')}>🐙 GitHub</div>
-          <div className="bookmark" onClick={() => loadURL('https://en.wikipedia.org')}>📖 Wikipedia</div>
-          <div className="bookmark" onClick={() => loadURL('https://www.reddit.com')}>🟠 Reddit</div>
-          <div className="bookmark" onClick={() => loadURL('https://news.ycombinator.com')}>📰 HN</div>
+          <div className="bookmark" onClick={() => loadURL('https://www.google.com')}><FaGoogle size={12} /> Google</div>
+          <div className="bookmark" onClick={() => loadURL('https://www.youtube.com')}><FaYoutube size={12} /> YouTube</div>
+          <div className="bookmark" onClick={() => loadURL('https://github.com')}><FaGithub size={12} /> GitHub</div>
+          <div className="bookmark" onClick={() => loadURL('https://en.wikipedia.org')}><FaWikipediaW size={12} /> Wikipedia</div>
+          <div className="bookmark" onClick={() => loadURL('https://www.reddit.com')}><FaReddit size={12} /> Reddit</div>
+          <div className="bookmark" onClick={() => loadURL('https://news.ycombinator.com')}><FaHackerNews size={12} /> HN</div>
           {userBookmarks.map(bm => (
             <div key={bm.id} className="bookmark user-bookmark" onClick={() => loadURL(bm.url)}>
-              {bm.icon} {bm.title}
+              <Bookmark size={12} /> {bm.title}
             </div>
           ))}
         </div>
@@ -875,22 +880,12 @@ function Browser() {
 
       {/* Content Area */}
       <div className="content-area" data-testid="content-area">
-        {/* Loading Bar */}
-        <div 
-          className="loading-bar" 
-          style={{ 
-            width: `${loadingProgress}%`, 
-            opacity: loading ? 1 : 0 
-          }}
-        ></div>
-
-        {/* Loading Overlay */}
+        <div className="loading-bar" style={{ width: `${loadingProgress}%`, opacity: loading ? 1 : 0 }}></div>
         <div className={`loading-overlay ${loading ? 'visible' : ''}`}>
-          <div className="spinner"></div>
+          <Loader2 size={40} className="spin-icon" />
           <div className="loading-text">{loadingText}</div>
         </div>
 
-        {/* Tab Contents */}
         {tabs.map(tab => {
           const isActive = tab.id === activeTabId;
           const showNewTab = isActive && !tab.url && !tab.showError && !loading;
@@ -899,14 +894,16 @@ function Browser() {
           
           return (
             <React.Fragment key={tab.id}>
-              {/* New Tab Page */}
               {showNewTab && (
                 <div className="new-tab-page active" style={bgStyle} data-testid={`ntp-${tab.id}`}>
                   <div className="ntp-clock" data-testid="clock">{clock}</div>
-                  <h1>🌐 CreaoBrowser</h1>
-                  <p className="welcome-text">Welcome, {user?.username}!</p>
+                  <div className="ntp-logo">
+                    <Shield size={36} />
+                    <h1>Killswitch</h1>
+                  </div>
+                  <p className="welcome-text">Welcome, {user?.username}</p>
                   <div className="search-box-wrap">
-                    <span style={{ fontSize: 18, color: '#9aa0a6' }}>🔍</span>
+                    <Search size={18} className="search-icon" />
                     <input
                       className="search-box"
                       placeholder="Search the web…"
@@ -914,9 +911,7 @@ function Browser() {
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           const query = e.target.value.trim();
-                          if (query) {
-                            doSearch(query);
-                          }
+                          if (query) doSearch(query);
                         }
                       }}
                       data-testid={`ntp-search-${tab.id}`}
@@ -924,7 +919,7 @@ function Browser() {
                   </div>
                   <div className="quick-links">
                     {defaultQL.map((q, i) => (
-                      <div key={i} className="quick-link" onClick={() => loadURL(q.url)}>
+                      <div key={i} className="quick-link" onClick={() => loadURL(q.url)} data-testid={`quick-link-${q.label.toLowerCase()}`}>
                         <div className="ql-icon">{q.icon}</div>
                         <span>{q.label}</span>
                       </div>
@@ -936,7 +931,7 @@ function Browser() {
                       <div className="quick-links">
                         {userBookmarks.slice(0, 6).map((bm) => (
                           <div key={bm.id} className="quick-link" onClick={() => loadURL(bm.url)}>
-                            <div className="ql-icon">{bm.icon}</div>
+                            <div className="ql-icon"><Bookmark size={20} /></div>
                             <span>{bm.title.slice(0, 10)}</span>
                           </div>
                         ))}
@@ -946,17 +941,15 @@ function Browser() {
                 </div>
               )}
 
-              {/* Error Page */}
               {showError && (
                 <div className="error-page active" data-testid={`error-${tab.id}`}>
-                  <div style={{ fontSize: 60 }}>😵</div>
+                  <AlertTriangle size={56} className="error-icon" />
                   <h2>Page couldn't load</h2>
                   <p>{tab.errorMsg || 'All proxy attempts failed.'}</p>
                   <button className="retry-btn" onClick={() => retryLoad(tab.id)} data-testid={`retry-${tab.id}`}>Try Again</button>
                 </div>
               )}
 
-              {/* Browser Frame */}
               {showFrame && (
                 <iframe
                   ref={el => iframeRefs.current[tab.id] = el}
@@ -968,10 +961,9 @@ function Browser() {
                 />
               )}
 
-              {/* Loading state when we don't have content yet */}
               {isActive && loading && !tab.blobUrl && !tab.showError && (
                 <div className="loading-page active">
-                  <div className="spinner large"></div>
+                  <Loader2 size={48} className="spin-icon" />
                   <div className="loading-page-text">{loadingText}</div>
                 </div>
               )}
@@ -983,7 +975,7 @@ function Browser() {
       {/* Status Bar */}
       <div className="status-bar">
         <span data-testid="status-text">{statusText}</span>
-        <span>CreaoBrowser v2.0 · Logged in as {user?.username}{user?.role === 'owner' ? ' (Owner)' : ''}</span>
+        <span>Killswitch · {user?.username}{user?.role === 'owner' ? ' (Owner)' : ''}</span>
       </div>
     </div>
   );
@@ -1003,8 +995,8 @@ function AppContent() {
   if (loading) {
     return (
       <div className="loading-screen">
-        <div className="spinner"></div>
-        <p>Loading CreaoBrowser...</p>
+        <Loader2 size={36} className="spin-icon" />
+        <p>Loading Killswitch...</p>
       </div>
     );
   }
