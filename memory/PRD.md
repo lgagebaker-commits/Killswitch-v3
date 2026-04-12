@@ -1,51 +1,40 @@
 # CreaoBrowser PRD
 
 ## Original Problem Statement
-User wanted to fix CreaoBrowser so that:
-1. Search doesn't redirect to a new tab
-2. Clicking links doesn't cause a black screen
-
-## What's Been Implemented (Jan 2026)
-- **CreaoBrowser**: A proxy-based web browser built in React
-- **Search Feature**: Uses SearXNG APIs with DuckDuckGo fallback
-- **Tab Management**: Multiple tabs, close tabs, switch tabs
-- **Navigation**: Back, forward, refresh, home buttons
-- **Bookmarks Bar**: Quick links to popular sites
-- **Link Interception**: All links clicked within iframes are intercepted and loaded through the proxy system
-
-## Bug Fixes Applied
-1. **Search Redirect Fix**: Search results now display in an iframe within the current tab instead of opening a new browser tab
-2. **Black Screen Fix**: 
-   - Removed `target="_blank"` from injected base tags
-   - Added link interceptor script that captures all link clicks
-   - Resolves relative URLs to absolute URLs before loading
-   - Shows proper error pages when proxy fails
-   - Added loading page for better UX during content fetch
+Web browser app with account system. Owner account (Ghost), security verification, admin panel with user management (ban/unban/delete), email+verification code on registration.
 
 ## Architecture
-- Frontend: React.js with useState/useCallback hooks
-- Proxy System: Multiple CORS proxies (allorigins, corsproxy.io, codetabs, thingproxy)
-- Content Loading: Blob URLs for iframe content
-- Communication: postMessage API between iframe and parent
+- Frontend: React.js (CreaoBrowser proxy browser)
+- Backend: FastAPI + MongoDB
+- Auth: JWT via httpOnly cookies, bcrypt password hashing
+- Proxy: Multiple CORS proxies for web browsing
 
-## Known Limitations
-- Many popular sites block proxy access (Wikipedia, Google, YouTube)
-- SearXNG APIs may fail due to CORS (falls back to DuckDuckGo)
-- DuckDuckGo lite version may have server issues
+## What's Been Implemented (Apr 2026)
+- **CreaoBrowser**: Proxy-based web browser with tabs, bookmarks, search
+- **Search**: SearXNG API with Google fallback, in-tab results (no redirect)
+- **Link Interception**: All iframe link clicks stay within browser
+- **Auth System**: Username/password + email + verification code registration
+- **Owner Account**: Ghost (security question verification on login, privacy-masked input)
+- **Owner Badge**: "Owner" tag shown next to username
+- **Admin Panel**: View all users online/offline, ban/unban/delete accounts
+- **Ban System**: Custom duration (minutes/hours/days), reason, force logout on ban
+- **Email Verification**: 6-digit code generated on registration
+- **Online Tracking**: Heartbeat every 30s, last seen timestamps
 
-## P0 Features (Complete)
-- [x] Tab management
-- [x] Address bar navigation
-- [x] Search functionality
-- [x] Link interception and same-tab loading
-- [x] Error handling
+## P0 (Complete)
+- [x] Owner account with security verification
+- [x] Admin panel with ban/unban/delete
+- [x] Email + verification code registration
+- [x] Force logout on ban
+- [x] Online/offline status tracking
 
-## P1 Features (Backlog)
-- [ ] Browser history persistence
-- [ ] Bookmark management
-- [ ] Settings/preferences
+## P1 (Backlog)
+- [ ] Email service integration (SendGrid/Resend) for real verification emails
+- [ ] Password reset flow
+- [ ] Browser history UI page
+- [ ] Saved passwords manager UI
 
-## P2 Features (Future)
-- [ ] Download manager
-- [ ] More reliable proxy options
+## P2 (Future)
+- [ ] Multi-device session management
+- [ ] More proxy options
 - [ ] Ad blocking
