@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Killswitch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'IBM Plex Sans',sans-serif;background:#000;color:rgba(255,255,255,.95);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    .title-bar{background:#0a0a0a;padding:0 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.06);height:40px;flex-shrink:0}
+    .wc{display:flex;gap:7px}.dot{width:12px;height:12px;border-radius:50%;cursor:pointer}.dot.c{background:#ff5f57}.dot.m{background:#ffbd2e}.dot.x{background:#28c840}
+    .brand{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.5);font-size:13px;font-weight:600;letter-spacing:.5px;font-family:'Manrope',sans-serif}
+    .badge{background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);font-size:10px;padding:2px 8px;border-radius:6px;letter-spacing:.5px;text-transform:uppercase;font-weight:600}
+    .tab-bar{background:#0a0a0a;display:flex;align-items:flex-end;padding:0 8px;gap:1px;border-bottom:1px solid rgba(255,255,255,.06);overflow-x:auto;flex-shrink:0}
+    .tab{display:flex;align-items:center;gap:6px;padding:7px 14px;background:transparent;border-radius:8px 8px 0 0;cursor:pointer;font-size:12px;white-space:nowrap;min-width:120px;max-width:200px;user-select:none;transition:background .12s;color:rgba(255,255,255,.5);font-family:'IBM Plex Sans',sans-serif}
+    .tab.active{background:#141414;color:#fff;border-top:1px solid rgba(255,255,255,.08);border-left:1px solid rgba(255,255,255,.08);border-right:1px solid rgba(255,255,255,.08)}
+    .tab:hover:not(.active){background:rgba(255,255,255,.04);color:rgba(255,255,255,.7)}
+    .tab .tt{flex:1;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+    .tab .ct{color:rgba(255,255,255,.3);background:none;border:none;cursor:pointer;padding:2px;border-radius:4px;font-size:13px;opacity:0;transition:all .12s}
+    .tab:hover .ct{opacity:1}.tab .ct:hover{color:#fff;background:rgba(255,255,255,.1)}
+    .ntb{background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;padding:6px 10px;border-radius:6px;font-size:18px;transition:all .12s}
+    .ntb:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.7)}
+    .toolbar{background:#141414;display:flex;align-items:center;gap:4px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+    .nb{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;padding:7px;border-radius:8px;transition:all .12s;font-size:16px;display:flex;align-items:center;justify-content:center}
+    .nb:hover:not(:disabled){background:rgba(255,255,255,.07);color:#fff}.nb:disabled{opacity:.2;cursor:default}
+    .ab-wrap{flex:1;display:flex;align-items:center;background:#1e1e1e;border-radius:10px;padding:0 14px;height:36px;gap:10px;border:1px solid rgba(255,255,255,.08);transition:border-color .2s,box-shadow .2s;max-width:800px;margin:0 auto}
+    .ab-wrap:focus-within{border-color:rgba(255,255,255,.25);box-shadow:0 0 0 1px rgba(255,255,255,.1)}
+    .ab-wrap svg{color:rgba(255,255,255,.3);flex-shrink:0}
+    .ab{flex:1;background:none;border:none;outline:none;color:rgba(255,255,255,.9);font-size:13px;font-family:'IBM Plex Sans',sans-serif}
+    .ab::placeholder{color:rgba(255,255,255,.25)}
+    .go{background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:14px;padding:4px;border-radius:4px;transition:all .12s}.go:hover{color:#fff}
+    .bm-bar{background:#0a0a0a;display:flex;align-items:center;gap:2px;padding:4px 12px;border-bottom:1px solid rgba(255,255,255,.04);overflow-x:auto;flex-shrink:0}
+    .bm{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;color:rgba(255,255,255,.5);white-space:nowrap;transition:all .12s;font-weight:500}
+    .bm:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.85)}
+    .content{flex:1;position:relative;overflow:hidden;background:#000}
+    .loading-overlay{position:absolute;inset:0;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:10}
+    .loading-overlay.visible{display:flex}
+    .spin{animation:spin 1s linear infinite;color:rgba(255,255,255,.4)}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .ltxt{color:rgba(255,255,255,.4);font-size:13px;font-weight:500}
+    .frame{width:100%;height:100%;border:none;background:#fff;display:none}.frame.active{display:block}
+    .ntp{display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;background:#000;gap:24px;position:relative}
+    .ntp.active{display:flex}
+    .clock{position:absolute;top:28px;right:36px;font-size:48px;font-weight:200;color:rgba(255,255,255,.15);letter-spacing:3px;font-family:'Manrope',sans-serif}
+    .ntp-logo{display:flex;align-items:center;gap:12px;color:rgba(255,255,255,.9)}
+    .ntp-logo h1{font-family:'Manrope',sans-serif;font-size:40px;font-weight:800;letter-spacing:-1px;color:#fff}
+    .welcome{color:rgba(255,255,255,.3);font-size:14px;margin-top:-12px}
+    .sb-wrap{display:flex;align-items:center;background:#1e1e1e;border-radius:16px;padding:0 20px;width:560px;max-width:90vw;height:50px;gap:12px;border:1px solid rgba(255,255,255,.08);transition:border-color .2s,box-shadow .2s}
+    .sb-wrap:focus-within{border-color:rgba(255,255,255,.2);box-shadow:0 0 0 1px rgba(255,255,255,.08),0 8px 32px rgba(0,0,0,.3)}
+    .sb-wrap svg{color:rgba(255,255,255,.25);flex-shrink:0}
+    .sb{flex:1;background:none;border:none;outline:none;color:rgba(255,255,255,.9);font-size:15px;font-family:'IBM Plex Sans',sans-serif}
+    .sb::placeholder{color:rgba(255,255,255,.2)}
+    .ql{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:8px;max-width:560px;width:100%}
+    .qi{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;padding:14px 8px;border-radius:12px;transition:background .12s}
+    .qi:hover{background:rgba(255,255,255,.05)}
+    .qi .ic{color:rgba(255,255,255,.6);font-size:22px}.qi span{font-size:11px;color:rgba(255,255,255,.35);font-weight:500}
+    .err-page{display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;background:#000;gap:16px;text-align:center;padding:40px}
+    .err-page.active{display:flex}
+    .err-page h2{font-size:22px;color:rgba(255,255,255,.8);font-family:'Manrope',sans-serif;font-weight:700}
+    .err-page p{color:rgba(255,255,255,.35);max-width:400px;line-height:1.6;font-size:14px}
+    .retry{background:#fff;color:#000;border:none;padding:10px 24px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;transition:opacity .15s}.retry:hover{opacity:.85}
+    .lbar{height:2px;background:#fff;width:0%;transition:width .3s ease;position:absolute;top:0;left:0;z-index:99;opacity:.6}
+    .status{background:#0a0a0a;padding:3px 14px;font-size:11px;color:rgba(255,255,255,.25);border-top:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;flex-shrink:0;font-weight:500}
+    svg.shield{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    svg.icon{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    svg.icon-sm{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    svg.icon-lg{width:36px;height:36px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  </style>
+</head>
+<body>
+<div class="title-bar">
+  <div class="wc"><div class="dot c"></div><div class="dot m"></div><div class="dot x"></div></div>
+  <div class="brand">
+    <svg class="shield"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <span>Killswitch</span>
+  </div>
+  <span class="badge">Proxy</span>
+</div>
+<div class="tab-bar" id="tabBar"><button class="ntb" onclick="addTab()">+</button></div>
+<div class="toolbar">
+  <button class="nb" id="backBtn" onclick="goBack()" disabled><svg class="icon"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+  <button class="nb" id="fwdBtn" onclick="goForward()" disabled><svg class="icon"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+  <button class="nb" onclick="refresh()"><svg class="icon"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+  <button class="nb" onclick="goHome()"><svg class="icon"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
+  <div class="ab-wrap">
+    <svg class="shield"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <input class="ab" id="addressBar" type="text" placeholder="Search or enter URL…" onkeydown="if(event.key==='Enter')navigate()"/>
+    <button class="go" onclick="navigate()"><svg class="icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+  </div>
+  <button class="nb" onclick="toggleBMBar()"><svg class="icon"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
+  <button class="nb"><svg class="icon"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 3.6 8a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 8 3.6a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V8a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+</div>
+<div class="bm-bar" id="bmBar">
+  <div class="bm" onclick="loadURL('https://www.google.com')">G Google</div>
+  <div class="bm" onclick="loadURL('https://www.youtube.com')">▶ YouTube</div>
+  <div class="bm" onclick="loadURL('https://github.com')">⌥ GitHub</div>
+  <div class="bm" onclick="loadURL('https://en.wikipedia.org')">W Wikipedia</div>
+  <div class="bm" onclick="loadURL('https://www.reddit.com')">● Reddit</div>
+  <div class="bm" onclick="loadURL('https://news.ycombinator.com')">Y HN</div>
+</div>
+<div class="content" id="contentArea">
+  <div class="lbar" id="loadingBar"></div>
+  <div class="loading-overlay" id="loadingOverlay">
+    <svg class="icon-lg spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    <div class="ltxt" id="loadingText">Connecting…</div>
+  </div>
+</div>
+<div class="status"><span id="statusText">Ready</span><span>Killswitch · Proxy Mode</span></div>
+<script>
+const PROXIES=[
+  u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+  u=>'https://corsproxy.io/?'+encodeURIComponent(u),
+  u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
+  u=>'https://thingproxy.freeboard.io/fetch/'+u,
+];
+const SEARX=['https://searx.be','https://paulgo.io','https://searxng.site','https://search.mdosch.de','https://searx.tiekoetter.com'];
+const QL=[
+  {label:'Google',url:'https://www.google.com'},
+  {label:'YouTube',url:'https://www.youtube.com'},
+  {label:'GitHub',url:'https://github.com'},
+  {label:'Wikipedia',url:'https://en.wikipedia.org'},
+  {label:'Reddit',url:'https://www.reddit.com'},
+  {label:'HN',url:'https://news.ycombinator.com'},
+];
+let tabs=[],activeTabId=null,tabCounter=0,blobURLs={};
+
+// Clock
+setInterval(()=>{
+  const now=new Date(),h=now.getHours(),m=String(now.getMinutes()).padStart(2,'0');
+  const ampm=h>=12?'PM':'AM',h12=h%12||12;
+  document.querySelectorAll('.clock').forEach(el=>el.textContent=h12+':'+m+' '+ampm);
+},1000);
+
+window.onload=()=>addTab();
+
+function addTab(url){
+  const id=++tabCounter;
+  tabs.push({id,title:'New Tab',url:'',history:[],historyIdx:-1,showError:false});
+  const btn=document.createElement('div');btn.className='tab active';btn.id='tab-'+id;
+  btn.innerHTML='<svg class="icon-sm"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span class="tt" id="tt-'+id+'">New Tab</span><button class="ct" onclick="closeTab(event,'+id+')">✕</button>';
+  btn.onclick=()=>switchTab(id);
+  document.getElementById('tabBar').insertBefore(btn,document.getElementById('tabBar').lastElementChild);
+  const ca=document.getElementById('contentArea');
+  const ntp=document.createElement('div');ntp.className='ntp';ntp.id='ntp-'+id;
+  ntp.innerHTML='<div class="clock"></div><div class="ntp-logo"><svg class="icon-lg" style="opacity:.6"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><h1>Killswitch</h1></div><div class="sb-wrap"><svg class="icon" style="color:rgba(255,255,255,.25)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="sb" id="ntp-s-'+id+'" placeholder="Search the web…" onkeydown="if(event.key===\'Enter\')loadURL(this.value)"/></div><div class="ql">'+QL.map(q=>'<div class="qi" onclick="loadURL(\''+q.url+'\')"><div class="ic">'+q.label[0]+'</div><span>'+q.label+'</span></div>').join('')+'</div>';
+  ca.appendChild(ntp);
+  const err=document.createElement('div');err.className='err-page';err.id='err-'+id;
+  err.innerHTML='<svg class="icon-lg" style="color:rgba(255,255,255,.2)"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><h2>Page couldn\'t load</h2><p id="err-msg-'+id+'">All proxy attempts failed.</p><button class="retry" onclick="retryLoad('+id+')">Try Again</button>';
+  ca.appendChild(err);
+  const frame=document.createElement('iframe');frame.className='frame';frame.id='frame-'+id;
+  frame.sandbox='allow-scripts allow-same-origin allow-forms allow-popups';
+  ca.appendChild(frame);
+  switchTab(id);
+  if(url)loadURL(url);
+}
+function switchTab(id){
+  activeTabId=id;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id)?.classList.add('active');
+  tabs.forEach(t=>{
+    ['frame','ntp','err'].forEach(p=>document.getElementById(p+'-'+t.id)?.classList.remove('active'));
+    if(t.id!==id)return;
+    if(t.showError)document.getElementById('err-'+id)?.classList.add('active');
+    else if(t.url)document.getElementById('frame-'+id)?.classList.add('active');
+    else document.getElementById('ntp-'+id)?.classList.add('active');
+  });
+  const tab=getTab(id);
+  document.getElementById('addressBar').value=tab?.url?.startsWith('search:')?tab.url.replace('search:',''):tab?.url||'';
+  updateNavBtns(tab);
+}
+function closeTab(e,id){
+  e.stopPropagation();if(tabs.length===1)addTab();
+  tabs=tabs.filter(t=>t.id!==id);
+  ['tab','frame','ntp','err'].forEach(p=>document.getElementById(p+'-'+id)?.remove());
+  if(blobURLs[id]){URL.revokeObjectURL(blobURLs[id]);delete blobURLs[id]}
+  if(activeTabId===id)switchTab(tabs[tabs.length-1].id);
+}
+function getTab(id){return tabs.find(t=>t.id===id)}
+function navigate(){const v=document.getElementById('addressBar').value.trim();if(v)loadURL(v)}
+
+async function loadURL(raw){
+  let url=raw.trim();if(!url)return;
+  const isURL=/^https?:\/\//i.test(url)||(/^[\w-]+(\.[\w]{2,})+/.test(url)&&!url.includes(' '));
+  if(!isURL){doSearch(url);return}
+  if(!/^https?:\/\//i.test(url))url='https://'+url;
+  const tab=getTab(activeTabId);
+  tab.url=url;tab.showError=false;
+  tab.history=tab.history.slice(0,tab.historyIdx+1);tab.history.push(url);tab.historyIdx=tab.history.length-1;
+  document.getElementById('addressBar').value=url;updateNavBtns(tab);
+  try{setTabTitle(activeTabId,new URL(url).hostname.replace('www.',''))}catch{}
+  setStatus('Connecting…');startLoading();showOverlay(true,'Racing proxies…');
+  document.getElementById('ntp-'+activeTabId)?.classList.remove('active');
+  document.getElementById('err-'+activeTabId)?.classList.remove('active');
+  document.getElementById('frame-'+activeTabId)?.classList.add('active');
+  let html=null;
+  try{html=await Promise.any(PROXIES.map(px=>fetchT(px(url),12000).then(async r=>{if(!r.ok)throw new Error;const t=await r.text();if(!t||t.length<50)throw new Error;return t})))}catch{html=null}
+  stopLoading();showOverlay(false);
+  if(!html){tab.showError=true;document.getElementById('err-msg-'+activeTabId).textContent='Could not load "'+url+'".';document.getElementById('frame-'+activeTabId)?.classList.remove('active');document.getElementById('err-'+activeTabId)?.classList.add('active');setStatus('Failed');return}
+  // Strip framebusters
+  html=html.replace(/if\s*\(\s*top\s*!==?\s*self\s*\)\s*\{[^}]*\}/gi,'');
+  html=html.replace(/if\s*\(\s*self\s*!==?\s*top\s*\)\s*\{[^}]*\}/gi,'');
+  html=html.replace(/if\s*\(\s*window\.top\s*!==?\s*window\.self\s*\)\s*\{[^}]*\}/gi,'');
+  html=html.replace(/if\s*\(\s*parent\s*!==?\s*self\s*\)\s*\{[^}]*\}/gi,'');
+  html=html.replace(/top\.location\s*(?:\.href)?\s*=\s*[^;]+;/gi,'');
+  html=html.replace(/document\.write\s*\(\s*['"][^'"]*display\s*:\s*none[^'"]*['"]\s*\)/gi,'');
+  html=html.replace(/<meta[^>]*http-equiv\s*=\s*["']?Content-Security-Policy["']?[^>]*>/gi,'');
+  html=html.replace(/<meta[^>]*http-equiv\s*=\s*["']?X-Frame-Options["']?[^>]*>/gi,'');
+  // Inject base + fallback styles + link interceptor
+  let baseOrigin=url;try{baseOrigin=new URL(url).origin+new URL(url).pathname.replace(/\/[^/]*$/,'/')}catch{}
+  if(!/<base[\s>]/i.test(html)){const base='<base href="'+baseOrigin+'">';html=html.replace(/(<head[^>]*>)/i,'$1'+base);if(!html.includes('<base'))html=base+html}
+  const styles='<style>html,body{background:#fff!important;color:#000!important;min-height:100%!important;display:block!important;visibility:visible!important;opacity:1!important}</style>';
+  if(html.includes('</head>'))html=html.replace('</head>',styles+'</head>');else html=styles+html;
+  const safeUrl=url.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const interceptor='<script>(function(){var B="'+safeUrl+'";try{Object.defineProperty(window,"top",{get:function(){return window.self}});Object.defineProperty(window,"parent",{get:function(){return window.self}})}catch(e){}var ow=document.write.bind(document);document.write=function(s){if(s&&typeof s==="string"&&s.indexOf("display")!==-1&&s.indexOf("none")!==-1)return;ow(s)};function R(h){if(!h)return B;h=h.trim();if(h.startsWith("http://")||h.startsWith("https://"))return h;if(h.startsWith("//"))return"https:"+h;try{return new URL(h,B).href}catch(e){return B}}function X(h){if(h.includes("/url?")||h.includes("&url=")||h.includes("?url=")){try{var u=new URL(h);var r=u.searchParams.get("q")||u.searchParams.get("url")||u.searchParams.get("u");if(r&&(r.startsWith("http://")||r.startsWith("https://")))return r}catch(e){}}return h}document.addEventListener("click",function(e){var t=e.target;while(t&&t.tagName!=="A"){if(!t.parentElement)break;t=t.parentElement}if(t&&t.tagName==="A"){var h=t.getAttribute("href");if(!h||h==="#"||h.startsWith("javascript:")||h.startsWith("mailto:")||h.startsWith("tel:"))return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();window.parent.postMessage({type:"loadURL",url:X(R(h))},"*");return false}},true);document.addEventListener("submit",function(e){var f=e.target;var a=f.getAttribute("action")||B;e.preventDefault();e.stopPropagation();try{var d=new FormData(f);var p=new URLSearchParams(d).toString();var u=R(a);window.parent.postMessage({type:"loadURL",url:u+(u.includes("?")?"&":"?")+p},"*")}catch(er){}return false},true);var oo=window.open;window.open=function(u){if(u)window.parent.postMessage({type:"loadURL",url:X(R(u))},"*");return null};document.querySelectorAll("meta[http-equiv=refresh]").forEach(function(m){m.remove()})})()<\/script>';
+  if(html.includes('</body>'))html=html.replace('</body>',interceptor+'</body>');else html+=interceptor;
+  if(blobURLs[activeTabId])URL.revokeObjectURL(blobURLs[activeTabId]);
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});blobURLs[activeTabId]=URL.createObjectURL(blob);
+  document.getElementById('frame-'+activeTabId).src=blobURLs[activeTabId];
+  setStatus('Loaded: '+url);
+}
+// Listen for iframe messages
+window.addEventListener('message',e=>{if(e.data?.type==='loadURL')loadURL(e.data.url);else if(e.data?.type==='doSearch')doSearch(e.data.query);else if(e.data?.type==='goHome')goHome()});
+
+function doSearch(query){
+  query=query.trim();if(!query)return;
+  const tab=getTab(activeTabId);tab.url='search:'+query;tab.showError=false;
+  tab.history=tab.history.slice(0,tab.historyIdx+1);tab.history.push('search:'+query);tab.historyIdx=tab.history.length-1;
+  document.getElementById('addressBar').value=query;updateNavBtns(tab);
+  setTabTitle(activeTabId,query.slice(0,20));showOverlay(true,'Searching…');startLoading();
+  ['ntp','err'].forEach(p=>document.getElementById(p+'-'+activeTabId)?.classList.remove('active'));
+  document.getElementById('frame-'+activeTabId)?.classList.add('active');
+  const q=encodeURIComponent(query);
+  Promise.any(SEARX.map(base=>fetchT(base+'/search?q='+q+'&format=json&categories=general&language=en',6000).then(r=>{if(!r.ok)throw new Error;return r.json()}).then(d=>{if(!d.results||!d.results.length)throw new Error;return d}))).then(data=>{
+    stopLoading();showOverlay(false);
+    const html=buildSearchPage(query,data.results||[],data.infoboxes||[]);
+    if(blobURLs[activeTabId])URL.revokeObjectURL(blobURLs[activeTabId]);
+    const blob=new Blob([html],{type:'text/html;charset=utf-8'});blobURLs[activeTabId]=URL.createObjectURL(blob);
+    document.getElementById('frame-'+activeTabId).src=blobURLs[activeTabId];
+    setStatus(data.results.length+' results');
+  }).catch(()=>{stopLoading();showOverlay(false);loadURL('https://www.google.com/search?q='+encodeURIComponent(query)+'&hl=en')});
+}
+function buildSearchPage(q,results,infoboxes){
+  const esc=s=>String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const cards=results.slice(0,20).map(r=>{let d='';try{d=new URL(r.url).hostname.replace('www.','')}catch{}return'<div style="padding:14px 16px;border-radius:10px;cursor:pointer;margin-bottom:2px;transition:background .12s" onmouseover="this.style.background=\'rgba(255,255,255,.05)\'" onmouseout="this.style.background=\'none\'" onclick="window.parent.postMessage({type:\'loadURL\',url:\''+r.url.replace(/'/g,"\\'")+'\'},\'*\')"><div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:4px">'+esc(d)+'</div><div style="font-size:17px;color:#fff;margin-bottom:4px;font-weight:500">'+esc((r.title||'').slice(0,90))+'</div><div style="font-size:14px;color:rgba(255,255,255,.35);line-height:1.6">'+esc((r.content||'').slice(0,220))+'</div></div>'}).join('');
+  return'<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"IBM Plex Sans",sans-serif;background:#000;color:rgba(255,255,255,.95);padding:0 0 40px}.top{background:#0a0a0a;padding:10px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:9}.sbar{flex:1;display:flex;align-items:center;background:#1e1e1e;border-radius:12px;padding:0 16px;height:42px;gap:10px;border:1px solid rgba(255,255,255,.08);max-width:680px}.sbar input{flex:1;background:none;border:none;outline:none;color:rgba(255,255,255,.9);font-size:15px;font-family:inherit}.sbar button{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:14px;padding:4px 8px}.cnt{max-width:740px;margin:0 auto;padding:20px 24px}.stats{font-size:13px;color:rgba(255,255,255,.3);margin-bottom:18px}</style></head><body><div class="top"><div style="font-size:18px;font-weight:700;color:#fff;cursor:pointer;font-family:Manrope,sans-serif" onclick="window.parent.postMessage({type:\'goHome\'},\'*\')">K</div><div class="sbar"><input id="q" value="'+esc(q)+'" onkeydown="if(event.key===\'Enter\')window.parent.postMessage({type:\'doSearch\',query:this.value},\'*\')"/><button onclick="window.parent.postMessage({type:\'doSearch\',query:document.getElementById(\'q\').value},\'*\')">Search</button></div></div><div class="cnt"><div class="stats">About '+results.length+' results</div>'+cards+'</div></body></html>';
+}
+function fetchT(url,ms){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);return fetch(url,{signal:c.signal}).finally(()=>clearTimeout(t))}
+function retryLoad(id){const t=getTab(id);if(t?.url){if(t.url.startsWith('search:'))doSearch(t.url.replace('search:',''));else loadURL(t.url)}}
+function goBack(){const t=getTab(activeTabId);if(t?.historyIdx>0){t.historyIdx--;const u=t.history[t.historyIdx];if(u.startsWith('search:'))doSearch(u.replace('search:',''));else loadURL(u)}}
+function goForward(){const t=getTab(activeTabId);if(t&&t.historyIdx<t.history.length-1){t.historyIdx++;const u=t.history[t.historyIdx];if(u.startsWith('search:'))doSearch(u.replace('search:',''));else loadURL(u)}}
+function refresh(){const t=getTab(activeTabId);if(t?.url){if(t.url.startsWith('search:'))doSearch(t.url.replace('search:',''));else loadURL(t.url)}}
+function goHome(){const t=getTab(activeTabId);if(t){t.url='';t.showError=false}document.getElementById('addressBar').value='';switchTab(activeTabId);setStatus('Ready')}
+function updateNavBtns(t){document.getElementById('backBtn').disabled=!t||t.historyIdx<=0;document.getElementById('fwdBtn').disabled=!t||t.historyIdx>=t.history.length-1}
+function showOverlay(s,t){const e=document.getElementById('loadingOverlay');if(t)document.getElementById('loadingText').textContent=t;e.classList.toggle('visible',s)}
+let _lt=null;
+function startLoading(){const b=document.getElementById('loadingBar');b.style.cssText='opacity:.6;width:0%';let p=0;clearInterval(_lt);_lt=setInterval(()=>{p=Math.min(p+Math.random()*12,85);b.style.width=p+'%'},300)}
+function stopLoading(){clearInterval(_lt);const b=document.getElementById('loadingBar');b.style.width='100%';setTimeout(()=>{b.style.opacity='0';b.style.width='0%'},400)}
+function setStatus(t){document.getElementById('statusText').textContent=t}
+function setTabTitle(id,t){const e=document.getElementById('tt-'+id);if(e)e.textContent=t.length>20?t.slice(0,20)+'…':t}
+function toggleBMBar(){const b=document.getElementById('bmBar');b.style.display=b.style.display==='none'?'flex':'none'}
+</script>
+</body>
+</html>
